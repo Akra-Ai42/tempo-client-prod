@@ -1,0 +1,36 @@
+# === Web / API ===
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pydantic==2.9.2
+python-multipart==0.0.12
+
+# === Auth (session cookie) ===
+itsdangerous==2.2.0
+starlette==0.38.6
+
+# === HTTP client (appels LLM) ===
+httpx==0.27.2
+
+# === ML ===
+xgboost==2.1.1
+scikit-learn==1.5.2
+shap==0.46.0
+pandas==2.2.3
+numpy==1.26.4
+
+# === LLM provider (OpenRouter via httpx — pas de SDK dédié) ===
+# (aucune lib supplémentaire nécessaire : httpx suffit)
+
+# === Base de données ===
+# sqlite3 est dans la stdlib Python
+sqlalchemy==2.0.35
+
+# === Scheduler ===
+apscheduler==3.10.4
+
+# === Monitoring ===
+evidently==0.4.37
+
+# === Utilitaires ===
+python-dotenv==1.0.1
+pytz==2024.2

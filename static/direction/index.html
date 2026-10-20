@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tempo Client — Direction</title>
+  <link rel="stylesheet" href="/static/shared/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Tempo Client — Direction</h1>
+    <div class="topbar-user">
+      <span id="user-name">—</span>
+      <button id="logout-btn">Déconnexion</button>
+    </div>
+  </header>
+
+  <main class="content">
+    <h2>Vue d'ensemble</h2>
+    <div class="kpi-grid" id="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Clients total</div>
+        <div class="kpi-value" id="kpi-total">—</div>
+      </div>
+      <div class="kpi-card alert">
+        <div class="kpi-label">Risque haut</div>
+        <div class="kpi-value" id="kpi-risque-haut">—</div>
+        <div class="kpi-sub">À traiter en priorité</div>
+      </div>
+      <div class="kpi-card warning">
+        <div class="kpi-label">Risque moyen</div>
+        <div class="kpi-value" id="kpi-risque-moyen">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Taux churn prédit</div>
+        <div class="kpi-value" id="kpi-churn">—</div>
+      </div>
+      <div class="kpi-card alert">
+        <div class="kpi-label">Coût LLM mois courant</div>
+        <div class="kpi-value" id="kpi-cout-llm">—</div>
+        <div class="kpi-sub">Budget mensuel : 50 $</div>
+      </div>
+      <div class="kpi-card" id="kpi-derive-card">
+        <div class="kpi-label">Dérive données</div>
+        <div class="kpi-value" id="kpi-derive">—</div>
+        <div class="kpi-sub">Détection Evidently</div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/static/direction/app.js"></script>
+</body>
+</html>

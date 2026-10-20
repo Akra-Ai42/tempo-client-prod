@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tempo Client — Espace Conseiller</title>
+  <link rel="stylesheet" href="/static/shared/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Tempo Client</h1>
+    <div class="topbar-user">
+      <span id="user-name">—</span>
+      <button id="logout-btn">Déconnexion</button>
+    </div>
+  </header>
+
+  <main class="content">
+    <h2>Mes clients à risque</h2>
+    <table class="clients-table">
+      <thead>
+        <tr>
+          <th>Nom</th>
+          <th>Région</th>
+          <th>Ancienneté</th>
+          <th>Produits</th>
+          <th>Solde moyen</th>
+          <th>Score churn</th>
+          <th>Urgence</th>
+        </tr>
+      </thead>
+      <tbody id="clients-tbody">
+        <tr><td colspan="7" style="text-align:center;color:#8a8a8a">Chargement…</td></tr>
+      </tbody>
+    </table>
+
+    <section id="client-detail" class="client-detail" hidden>
+      <h3 id="client-detail-name">—</h3>
+      <ul class="feature-list" id="feature-list"></ul>
+      <div class="explanation-box" id="explanation-box">—</div>
+      <div class="reco-list" id="reco-list"></div>
+    </section>
+  </main>
+
+  <script src="/static/conseiller/app.js"></script>
+</body>
+</html>
