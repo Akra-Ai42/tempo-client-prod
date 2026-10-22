@@ -55,3 +55,5 @@
 {"ts": "2026-10-22T12:54:56.491863", "event_type": "explain_requested", "username": "direction", "user_role": "direction", "client_id": 828, "outcome": "success", "extra": {"from_cache": false, "model": "meta-llama/llama-3.3-70b-instruct"}}
 {"ts": "2026-10-22T13:24:54.573365", "event_type": "recommend_requested", "username": "direction", "user_role": "direction", "client_id": 828, "outcome": "success", "extra": {"nb_recos": 3}}
 {"ts": "2026-10-22T13:24:59.923014", "event_type": "explain_requested", "username": "direction", "user_role": "direction", "client_id": 828, "outcome": "success", "extra": {"from_cache": false, "model": "meta-llama/llama-3.3-70b-instruct"}}
+{"ts": "2026-10-22T13:47:26.894945", "event_type": "recommend_requested", "username": "direction", "user_role": "direction", "client_id": 828, "outcome": "success", "extra": {"nb_recos": 3}}
+{"ts": "2026-10-22T13:47:31.435661", "event_type": "explain_requested", "username": "direction", "user_role": "direction", "client_id": 828, "outcome": "success", "extra": {"from_cache": false, "model": "meta-llama/llama-3.3-70b-instruct"}}

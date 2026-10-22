@@ -3,645 +3,1629 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mon carnet de bord — Atelier 2 jours</title>
+<title>Carnet de bord. Tempo Client V2</title>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
-    --ink: #0F1A2E;
-    --paper: #FAFAF7;
-    --white: #ffffff;
-    --muted: #6B6F76;
-    --line: #E5E5E0;
-    --teal: #1D9E75;
-    --teal-dk: #0F6E56;
-    --coral: #FF6B47;
-    --amber: #F5B83D;
-    --blue: #378ADD;
-    --purple: #7F77DD;
+    --ink: #1a1a1a;
+    --ink-soft: #4a4a4a;
+    --muted: #8a8a8a;
+    --line: #d4d4d4;
+    --paper: #fafaf7;
+    --card: #ffffff;
+    --accent: #2d4a66;
+    --accent-soft: #e8edf2;
+    --highlight: #8b7355;
+    --highlight-soft: #f5efe5;
+    --success: #4a6a4a;
+    --success-soft: #e8efe8;
+    --danger: #9c3b3b;
+    --danger-soft: #f5e8e8;
   }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     background: var(--paper);
     color: var(--ink);
-    min-height: 100vh;
-    padding: 2rem 1rem 4rem;
-    line-height: 1.5;
+    line-height: 1.6;
+    padding: 30px 20px;
+    font-size: 14px;
   }
-  .container { max-width: 760px; margin: 0 auto; }
 
-  /* HEADER */
-  .header { margin-bottom: 2rem; }
-  .eyebrow {
-    font-size: 11px;
-    letter-spacing: 0.15em;
+  .container { max-width: 1000px; margin: 0 auto; }
+
+  header.doc-header {
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  header.doc-header h1 { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+  header.doc-header .subtitle { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+
+  header.doc-header .meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    padding: 16px;
+    background: var(--card);
+    border: 1px solid var(--line);
+  }
+
+  header.doc-header .meta-item .label {
     color: var(--muted);
     text-transform: uppercase;
-    font-weight: 600;
-    margin-bottom: 6px;
-  }
-  h1 {
-    font-family: Georgia, serif;
-    font-size: 32px;
-    font-weight: 700;
-    margin-bottom: 8px;
-    color: var(--ink);
-  }
-  .subtitle { font-size: 14px; color: var(--muted); margin-bottom: 0; }
-
-  /* NAME INPUT */
-  .name-card {
-    background: var(--white);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 16px 18px;
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-  .name-card label {
-    font-size: 13px;
-    color: var(--muted);
-    font-weight: 500;
-  }
-  .name-card input {
-    flex: 1;
-    min-width: 200px;
-    border: none;
-    border-bottom: 1.5px solid var(--line);
-    padding: 4px 0;
-    font-size: 15px;
-    font-family: inherit;
-    background: transparent;
-    color: var(--ink);
-    outline: none;
-  }
-  .name-card input:focus { border-bottom-color: var(--teal); }
-
-  /* PROGRESS */
-  .top-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-  }
-  .prog-label { font-size: 12px; color: var(--muted); }
-  .reset-btn {
-    font-size: 11px;
-    color: var(--muted);
-    border: 1px solid var(--line);
-    background: transparent;
-    padding: 5px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-family: inherit;
-    transition: all 0.15s;
-  }
-  .reset-btn:hover { background: var(--white); border-color: #ccc; color: var(--ink); }
-  .progress-bar-bg {
-    height: 6px;
-    background: #e8e8e3;
-    border-radius: 3px;
-    margin-bottom: 2rem;
-    overflow: hidden;
-  }
-  .progress-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--teal), var(--coral));
-    border-radius: 3px;
-    transition: width 0.4s ease;
-  }
-
-  /* DAY DIVIDER */
-  .day-divider {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin: 2rem 0 1rem;
-  }
-  .day-divider .day-label {
-    font-family: Georgia, serif;
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--ink);
-  }
-  .day-divider .day-sub {
-    font-size: 12px;
-    color: var(--muted);
-    font-style: italic;
-  }
-  .day-divider .line-fill {
-    flex: 1;
-    height: 1px;
-    background: var(--line);
-  }
-
-  /* SECTION */
-  .section {
-    margin-bottom: 10px;
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    overflow: hidden;
-    background: var(--white);
-    transition: box-shadow 0.2s;
-  }
-  .section.has-open { box-shadow: 0 2px 10px rgba(15, 26, 46, 0.05); }
-  .section-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 13px 16px;
-    cursor: pointer;
-    background: var(--white);
-    user-select: none;
-    transition: background 0.15s;
-  }
-  .section-header:hover { background: #fbfaf6; }
-  .section-num {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: var(--line);
-    color: var(--white);
-    font-size: 12px;
-    font-weight: 700;
-    font-family: Georgia, serif;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: background 0.2s;
-  }
-  .section-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--ink);
-    flex: 1;
-  }
-  .section-time {
-    font-size: 11px;
-    color: var(--muted);
-    margin-right: 8px;
-  }
-  .section-count {
-    font-size: 11px;
-    color: var(--muted);
-    background: #f0efea;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-variant-numeric: tabular-nums;
-  }
-  .chevron {
+    letter-spacing: 0.05em;
     font-size: 10px;
-    color: #aaa;
-    transition: transform 0.2s;
-    margin-left: 4px;
+    margin-bottom: 4px;
   }
-  .chevron.open { transform: rotate(90deg); }
 
-  /* SECTION COMPLETED STATE */
-  .section.completed .section-num { background: var(--teal); }
-  .section.completed .section-count { background: #d8f0e6; color: var(--teal-dk); font-weight: 600; }
+  header.doc-header .meta-item .value { color: var(--ink); font-weight: 500; font-size: 12px; }
 
-  /* INTRO BLOCK */
-  .section-intro {
-    display: none;
-    padding: 14px 16px 4px 56px;
-    font-size: 12.5px;
-    color: var(--muted);
-    font-style: italic;
-    line-height: 1.6;
-    border-top: 1px solid var(--line);
-    background: #fbfaf6;
+  nav.toc {
+    background: var(--card);
+    padding: 24px;
+    border: 1px solid var(--line);
+    margin-bottom: 40px;
   }
-  .section-intro.open { display: block; }
 
-  /* ITEMS */
-  .items { display: none; padding: 4px 0 8px; background: #fbfaf6; }
-  .items.open { display: block; }
-  .item {
-    display: flex;
-    align-items: flex-start;
-    padding: 7px 16px 7px 56px;
+  nav.toc h2 {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
   }
-  .item label {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    cursor: pointer;
-    width: 100%;
+
+  nav.toc h3 {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--highlight);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 16px 0 8px;
   }
-  .item input[type=checkbox] {
-    margin-top: 3px;
-    flex-shrink: 0;
-    cursor: pointer;
-    accent-color: var(--teal);
-    width: 15px;
-    height: 15px;
+
+  nav.toc ul { list-style: none; padding: 0 0 0 8px; }
+  nav.toc li { padding: 4px 0; font-size: 13px; }
+  nav.toc a { color: var(--ink-soft); text-decoration: none; transition: color 0.15s; }
+  nav.toc a:hover { color: var(--accent); }
+
+  nav.toc .status {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 6px;
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-weight: 600;
   }
-  .item-text {
-    font-size: 13px;
+
+  nav.toc .status.done { background: var(--success-soft); color: var(--success); }
+  nav.toc .status.todo { background: var(--highlight-soft); color: var(--highlight); }
+
+  section.doc-section {
+    background: var(--card);
+    padding: 32px;
+    border: 1px solid var(--line);
+    margin-bottom: 24px;
+  }
+
+  section.doc-section h2 {
+    font-size: 20px;
+    font-weight: 600;
     color: var(--ink);
+    margin-bottom: 8px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  section.doc-section h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--accent);
+    margin: 24px 0 12px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  section.doc-section h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--highlight);
+    margin: 18px 0 10px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  section.doc-section p { margin-bottom: 12px; }
+  section.doc-section ul, section.doc-section ol { padding-left: 24px; margin-bottom: 12px; }
+  section.doc-section li { margin-bottom: 6px; font-size: 13px; }
+  section.doc-section strong { color: var(--ink); font-weight: 600; }
+
+  section.doc-section code {
+    font-family: 'SF Mono', 'Monaco', monospace;
+    font-size: 12px;
+    background: var(--accent-soft);
+    padding: 2px 6px;
+    color: var(--ink);
+  }
+
+  section.doc-section pre {
+    background: var(--ink);
+    color: #e4e4e4;
+    padding: 16px 20px;
+    overflow-x: auto;
+    margin: 12px 0;
+    font-family: 'SF Mono', 'Monaco', monospace;
+    font-size: 12px;
     line-height: 1.5;
   }
-  .item-text.done {
-    color: #aaa;
-    text-decoration: line-through;
-  }
-  .item-tip {
-    display: block;
-    font-size: 11.5px;
-    color: var(--muted);
-    margin-top: 2px;
-    font-style: italic;
+
+  section.doc-section pre code { background: none; padding: 0; color: inherit; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 12px;
   }
 
-  /* CELEBRATION BANNER */
-  .celebrate {
-    background: var(--teal);
-    color: var(--white);
-    padding: 1.5rem;
-    border-radius: 12px;
-    text-align: center;
-    margin-top: 2rem;
-    display: none;
+  thead { background: var(--accent-soft); }
+
+  th {
+    text-align: left;
+    padding: 10px 12px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-size: 10px;
+    border-bottom: 1px solid var(--line);
   }
-  .celebrate.show { display: block; }
-  .celebrate h2 {
-    font-family: Georgia, serif;
-    font-size: 22px;
+
+  td { padding: 10px 12px; border-bottom: 1px solid var(--line); color: var(--ink-soft); }
+  tr:hover td { background: var(--paper); }
+
+  .tip {
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 13px;
+  }
+
+  .tip .label {
+    font-size: 10px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
     margin-bottom: 6px;
   }
-  .celebrate p { font-size: 14px; opacity: 0.9; }
 
-  /* FOOTER */
-  .footer-note {
-    text-align: center;
-    margin-top: 2.5rem;
-    font-size: 11px;
-    color: var(--muted);
+  .piege {
+    background: var(--danger-soft);
+    border-left: 3px solid var(--danger);
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 13px;
   }
 
-  @media (max-width: 500px) {
-    body { padding: 1.5rem 0.75rem 3rem; }
-    h1 { font-size: 26px; }
-    .section-header { padding: 11px 12px; gap: 10px; }
-    .section-num { width: 24px; height: 24px; font-size: 11px; }
-    .section-title { font-size: 13px; }
-    .section-time { display: none; }
-    .item { padding-left: 46px; padding-right: 12px; }
-    .section-intro { padding-left: 46px; padding-right: 12px; }
+  .piege .label {
+    font-size: 10px;
+    color: var(--danger);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .brique-status {
+    display: inline-block;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-left: 10px;
+    vertical-align: middle;
+  }
+
+  .brique-status.done { background: var(--success-soft); color: var(--success); }
+  .brique-status.todo { background: var(--highlight-soft); color: var(--highlight); }
+
+  .flow-box {
+    background: var(--surface, #fafaf7);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--accent);
+    padding: 20px 24px;
+    margin: 16px 0;
+    font-size: 13px;
+  }
+
+  .flow-box .scenario {
+    font-size: 11px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  .flow-box ol {
+    padding-left: 20px;
+    margin-bottom: 12px;
+  }
+
+  .flow-box ol li {
+    margin-bottom: 10px;
+    line-height: 1.6;
+  }
+
+  .flow-box .substep {
+    display: block;
+    padding-left: 16px;
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
+  .flow-box .arrow-down {
+    text-align: center;
+    color: var(--accent);
+    font-size: 16px;
+    margin: 8px 0;
+  }
+
+  .flow-box .outcome {
+    background: var(--card);
+    border: 1px dashed var(--border-regular, #d4d4d4);
+    padding: 12px 16px;
+    font-style: italic;
+    color: var(--ink-soft);
+    margin-top: 8px;
+  }
+
+  .approach-b {
+    background: var(--highlight-soft);
+    border-left: 3px solid var(--highlight);
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 13px;
+  }
+
+  .approach-b .label {
+    font-size: 10px;
+    color: var(--highlight);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .metric-callout {
+    background: var(--ink);
+    color: #e4e4e4;
+    padding: 20px 24px;
+    margin: 20px 0;
+    font-family: 'SF Mono', 'Monaco', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  .arch-ascii {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 16px;
+    font-family: 'SF Mono', 'Monaco', monospace;
+    font-size: 11px;
+    line-height: 1.4;
+    overflow-x: auto;
+    margin: 16px 0;
+    color: var(--ink-soft);
+    white-space: pre;
+  }
+
+  footer {
+    margin-top: 60px;
+    padding: 20px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    border-top: 1px solid var(--line);
   }
 </style>
 </head>
 <body>
+
 <div class="container">
-  <div class="header">
-    <p class="eyebrow">Atelier 2 jours · 14h</p>
-    <h1>Mon carnet de bord</h1>
-    <p class="subtitle">Coche chaque tâche au fur et à mesure. Ta progression est sauvegardée automatiquement dans ce navigateur.</p>
+
+<header class="doc-header">
+  <h1>Carnet de bord. Tempo Client V2</h1>
+  <p class="subtitle">Document pédagogique. Chaque brique est décrite avec un flux pas à pas : ce qui se passe couche par couche quand l'utilisateur fait une action.</p>
+
+  <div class="meta">
+    <div class="meta-item">
+      <div class="label">Auteur</div>
+      <div class="value">Akram Toumani</div>
+    </div>
+    <div class="meta-item">
+      <div class="label">Projet</div>
+      <div class="value">Tempo Client V2</div>
+    </div>
+    <div class="meta-item">
+      <div class="label">Démarrage</div>
+      <div class="value">Octobre 2026</div>
+    </div>
+    <div class="meta-item">
+      <div class="label">Objectif</div>
+      <div class="value">Démo Sloan + Talk 1er déc</div>
+    </div>
+    <div class="meta-item">
+      <div class="label">État</div>
+      <div class="value">11/13 briques livrées</div>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <h2>Table des matières</h2>
+
+  <h3>Vision et architecture</h3>
+  <ul>
+    <li><a href="#vision">Vision du projet</a></li>
+    <li><a href="#archi">Architecture globale cible</a></li>
+    <li><a href="#incidents">Les 3 incidents injectés, approche B</a></li>
+  </ul>
+
+  <h3>Parcours utilisateur conseiller</h3>
+  <ul>
+    <li><a href="#user1">Étape 1. Je me connecte</a></li>
+    <li><a href="#user2">Étape 2. J'arrive sur mon dashboard</a></li>
+    <li><a href="#user3">Étape 3. Je sélectionne un client</a></li>
+    <li><a href="#user4">Étape 4. Je lis l'analyse contextuelle</a></li>
+    <li><a href="#user5">Étape 5. Je consulte les actions recommandées</a></li>
+    <li><a href="#user6">Étape 6. Je me déconnecte</a></li>
+  </ul>
+
+  <h3>Parcours utilisateur direction</h3>
+  <ul>
+    <li><a href="#userD1">Étape D1. Je me connecte en tant que direction</a></li>
+    <li><a href="#userD2">Étape D2. Je consulte le dashboard business + ML Ops</a></li>
+    <li><a href="#userD3">Étape D3. Je bascule vers la vue conseiller</a></li>
+    <li><a href="#userD4">Étape D4. Je consulte la dérive et ouvre le rapport Evidently</a></li>
+  </ul>
+
+  <h3>Infrastructure sous-jacente</h3>
+  <ul>
+    <li><a href="#infraA">Infra A. Au boot du serveur</a></li>
+    <li><a href="#infraB">Infra B. Chaque appel LLM</a></li>
+    <li><a href="#infraC">Infra C. Chaque requête RBAC</a></li>
+    <li><a href="#infraD">Infra D. Vue agrégée direction, pattern lecture pure</a></li>
+    <li><a href="#infraE">Infra E. Monitoring Evidently, adapter branché à chaud</a></li>
+  </ul>
+
+  <h3>Briques construites</h3>
+  <ul>
+    <li><a href="#b1">Brique 1. LLMProvider + OpenRouter <span class="status done">Livrée</span></a></li>
+    <li><a href="#b2">Brique 2. Cache LRU + explain service <span class="status done">Livrée</span></a></li>
+    <li><a href="#b3">Brique 3. Dataset + XGBoost + SHAP <span class="status done">Livrée</span></a></li>
+    <li><a href="#b4">Brique 4. Auth + session cookies <span class="status done">Livrée</span></a></li>
+    <li><a href="#b5">Brique 5. RBAC + /clients/mine <span class="status done">Livrée</span></a></li>
+    <li><a href="#b6">Brique 6. Front conseiller V2 UX premium <span class="status done">Livrée</span></a></li>
+    <li><a href="#b10a">Brique 10a. /score + pré-scoring <span class="status done">Livrée</span></a></li>
+    <li><a href="#b10b">Brique 10b. /explain + cache LLM + audit RGPD <span class="status done">Livrée</span></a></li>
+    <li><a href="#b10c">Brique 10c. /recommend + règles métier <span class="status done">Livrée</span></a></li>
+    <li><a href="#b7">Brique 7. Dashboard direction V2 UX premium <span class="status done">Livrée</span></a></li>
+    <li><a href="#b8">Brique 8. Monitoring Evidently <span class="status todo">À venir</span></a></li>
+    <li><a href="#b9">Brique 9. Scheduler <span class="status todo">À venir</span></a></li>
+  </ul>
+
+  <h3>Références</h3>
+  <ul>
+    <li><a href="#metriques">Métriques consolidées</a></li>
+    <li><a href="#glossaire">Glossaire technique</a></li>
+    <li><a href="#pieges">Journal des pièges évités</a></li>
+  </ul>
+</nav>
+
+<section class="doc-section" id="vision">
+  <h2>Vision du projet</h2>
+  <p><strong>Tempo Client V2</strong> est un outil décisionnel pour conseillers bancaires qui combine :</p>
+  <ul>
+    <li>Un <strong>modèle ML</strong> qui prédit la probabilité qu'un client parte (churn)</li>
+    <li>Une <strong>couche d'explication</strong> qui transforme les SHAP values en langage naturel via LLM</li>
+    <li>Un <strong>système d'alertes</strong> et de recommandations d'actions</li>
+    <li>Un <strong>dashboard direction</strong> avec les KPI business et ML Ops</li>
+  </ul>
+  <p><strong>Spécificité pédagogique</strong> : trois incidents volontaires sont injectés dans le code pour servir d'exercice aux étudiants Devoteam MSc1 Finance/Assurance.</p>
+</section>
+
+<section class="doc-section" id="archi">
+  <h2>Architecture globale cible</h2>
+  <div class="arch-ascii">+-------------------------------------------------------------+
+|                     TEMPO CLIENT V2                         |
++-------------------------------------------------------------+
+|  Fronts HTML statiques                                      |
+|  ├─ /static/shared/login.html         (livré)               |
+|  ├─ /static/conseiller/index.html     (livré, V2 UX)        |
+|  └─ /static/direction/index.html      (à venir, brique 7)   |
++-------------------------------------------------------------+
+|  FastAPI (app/main.py)                                      |
+|  ├─ POST /auth/login              (livré, brique 4)         |
+|  ├─ POST /auth/logout             (livré, brique 4)         |
+|  ├─ GET  /auth/me                 (livré, brique 4)         |
+|  ├─ GET  /clients/mine            (livré, brique 5 et 10a)  |
+|  ├─ POST /score/{client_id}       (livré, brique 10a)       |
+|  ├─ POST /explain/{client_id}     (livré, brique 10b)       |
+|  ├─ POST /recommend/{client_id}   (livré, brique 10c)       |
+|  └─ GET  /dashboard/direction     (à venir, brique 7)       |
++-------------------------------------------------------------+
+|  Services métier et ML                                      |
+|  ├─ app/core/explain_service.py   (livré, brique 2)         |
+|  ├─ app/core/clients.py           (livré, brique 5)         |
+|  ├─ app/core/scoring.py           (livré, brique 10a)       |
+|  ├─ app/ml/churn_model.py         (livré, brique 3)         |
+|  ├─ app/ml/shap_explainer.py      (livré, brique 3)         |
+|  └─ app/ml/reco_model.py          (livré, brique 10c)       |
++-------------------------------------------------------------+
+|  Infrastructure                                             |
+|  ├─ LLMProvider abstrait          (livré, brique 1)         |
+|  ├─ Cache TTL LRU                 (livré, brique 2)         |
+|  ├─ SessionMiddleware             (livré, brique 4)         |
+|  ├─ Audit log RGPD                (livré, brique 10b)       |
+|  ├─ SQLite                        (à venir, brique 9)       |
+|  ├─ APScheduler                   (à venir, brique 9)       |
+|  └─ Evidently monitoring          (à venir, brique 8)       |
++-------------------------------------------------------------+</div>
+</section>
+
+<section class="doc-section" id="incidents">
+  <h2>Les 3 incidents injectés, approche B pure</h2>
+
+  <div class="approach-b">
+    <div class="label">Approche B retenue</div>
+    <p>Le code source est <strong>100 pourcent sain</strong> pendant tout le développement. Aucun tag INCIDENT-X dans le code. Les 3 points d'injection sont documentés uniquement dans le fichier privé <code>docs/INCIDENT_INJECTION_PLAYBOOK.md</code>.</p>
+    <p>En semaine 4, les 3 modifications sont appliquées sur une branche <code>incidents/semaine-4</code>, puis déployées. Le <code>main</code> reste propre pour la correction.</p>
   </div>
 
-  <div class="name-card">
-    <label for="student-name">Ce carnet est à</label>
-    <input type="text" id="student-name" placeholder="Prénom Nom" autocomplete="off">
+  <table>
+    <thead>
+      <tr><th>Numéro</th><th>Nom</th><th>Impact</th><th>Statut</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td><strong>Facture LLM qui explose</strong></td><td>DAF panique, 847 USD au lieu de 50 USD</td><td>À injecter semaine 4</td></tr>
+      <tr><td>2</td><td><strong>Dérive silencieuse</strong></td><td>Recommandations qui ne collent plus</td><td>Dataset préparé brique 3</td></tr>
+      <tr><td>3</td><td><strong>Faille RBAC</strong></td><td>DPO alerté, risque CNIL 72h</td><td>À injecter semaine 4</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============== PARCOURS UTILISATEUR ============== -->
+
+<section class="doc-section" id="user1">
+  <h2>Étape 1. Je me connecte</h2>
+
+  <div class="flow-box">
+    <div class="scenario">Scénario : Marie Dubois ouvre son navigateur sur Tempo Client</div>
+    <ol>
+      <li>Le navigateur charge <code>/static/shared/login.html</code>
+        <span class="substep">→ formulaire HTML sobre, champs username et password</span>
+      </li>
+      <li>Marie saisit <code>conseiller_lille</code> et son mot de passe, clique "Se connecter"</li>
+      <li><code>login.js</code> envoie un POST <code>/auth/login</code> avec payload JSON
+        <span class="substep">→ <code>credentials: 'same-origin'</code> pour que le cookie soit géré</span>
+      </li>
+      <li>Côté serveur, <code>app/auth/routes.py</code> reçoit la requête
+        <span class="substep">→ <code>verify_password()</code> compare avec le hash bcrypt stocké</span>
+        <span class="substep">→ si user inexistant : bcrypt bidon pour éviter la timing attack, puis False</span>
+        <span class="substep">→ si password incorrect : retourne False</span>
+        <span class="substep">→ si tout OK : retourne l'objet User</span>
+      </li>
+      <li><code>login_user()</code> crée la session Starlette signée dans le cookie
+        <span class="substep">→ <code>SessionMiddleware</code> encode et signe, durée 24h</span>
+      </li>
+      <li>Réponse HTTP 200 avec le cookie <code>Set-Cookie: session=...</code> et body JSON</li>
+      <li><code>login.js</code> lit <code>info.role</code> et redirige vers le dashboard adapté</li>
+    </ol>
+    <div class="arrow-down">↓</div>
+    <div class="outcome">Marie arrive sur son dashboard. Le cookie est posé. Les prochaines requêtes l'enverront automatiquement.</div>
   </div>
 
-  <div class="top-bar">
-    <span class="prog-label" id="prog-label">0 / 0 tâches complétées</span>
-    <button class="reset-btn" onclick="resetAll()">Tout réinitialiser</button>
+  <h3>Détails techniques clés</h3>
+  <ul>
+    <li><strong>Hash bcrypt rounds=12</strong> : vérification en environ 100 ms, défense native brute-force</li>
+    <li><strong>Message d'erreur générique</strong> "Identifiants invalides" : défense contre énumération</li>
+    <li><strong>Cookie signé, pas chiffré</strong> : le serveur vérifie l'intégrité</li>
+    <li><strong>Pattern Dependency Injection</strong> : chaque endpoint protégé déclare <code>Depends(get_current_user)</code></li>
+  </ul>
+</section>
+
+<section class="doc-section" id="user2">
+  <h2>Étape 2. J'arrive sur mon dashboard</h2>
+
+  <div class="flow-box">
+    <div class="scenario">Scénario : la page conseiller/index.html se charge</div>
+    <ol>
+      <li>Le navigateur charge le HTML, le CSS et <code>app.js</code>
+        <span class="substep">→ <code>loadMe().then(loadClients)</code> au boot</span>
+      </li>
+      <li><code>loadMe()</code> appelle GET <code>/auth/me</code>
+        <span class="substep">→ le cookie session est envoyé automatiquement</span>
+        <span class="substep">→ si pas de session : 401, redirection vers login</span>
+      </li>
+      <li><code>app.js</code> affiche le header : avatar initiales + "Marie Dubois - lille"</li>
+      <li><code>loadClients()</code> appelle GET <code>/clients/mine</code></li>
+      <li>Côté serveur :
+        <span class="substep">→ <code>get_all_clients()</code> retourne les 1000 clients en mémoire</span>
+        <span class="substep">→ <code>filter_clients_by_user()</code> applique le RBAC régional (489 pour Lille)</span>
+        <span class="substep">→ <code>get_all_scores()</code> retourne le dict pré-calculé</span>
+        <span class="substep">→ enrichissement avec score_churn et urgence + tri décroissant</span>
+      </li>
+      <li>Réponse 200 avec liste <code>ClientWithUrgence</code> sérialisée</li>
+      <li>Côté front, <code>renderSidebar()</code> construit la liste 2 lignes par client avec puce couleur</li>
+    </ol>
+    <div class="arrow-down">↓</div>
+    <div class="outcome">Marie voit sa sidebar à gauche avec 489 clients Lille triés par urgence. Zone centrale vide avec message d'invitation.</div>
   </div>
-  <div class="progress-bar-bg">
-    <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div>
+</section>
+
+<section class="doc-section" id="user3">
+  <h2>Étape 3. Je sélectionne un client</h2>
+
+  <div class="flow-box">
+    <div class="scenario">Scénario : Marie clique sur Yasmine Dupont dans la sidebar</div>
+    <ol>
+      <li><code>openClient(client)</code> est déclenché, highlight sidebar</li>
+      <li>La zone centrale affiche immédiatement :
+        <span class="substep">→ <code>renderHero()</code> : nom, méta, gauge circulaire SVG colorée</span>
+        <span class="substep">→ <code>renderKPICards()</code> : 4 cartes Profil/Activité/Finance/Risque</span>
+        <span class="substep">→ 3 placeholders pour SHAP, Analyse, Recos</span>
+      </li>
+      <li>3 appels API partent en parallèle :
+        <span class="substep">→ POST <code>/score/{id}</code> pour top features SHAP</span>
+        <span class="substep">→ POST <code>/explain/{id}</code> pour l'explication LLM</span>
+        <span class="substep">→ POST <code>/recommend/{id}</code> pour les actions</span>
+      </li>
+      <li><code>/score</code> est traité d'abord car léger (lookup dict) :
+        <span class="substep">→ 404 si client inexistant</span>
+        <span class="substep">→ 403 si cross-région pour un conseiller</span>
+        <span class="substep">→ lookup dans le dict pré-calculé en mémoire</span>
+      </li>
+      <li>Front construit la section "Top facteurs explicatifs" avec flèches directionnelles colorées</li>
+    </ol>
+    <div class="arrow-down">↓</div>
+    <div class="outcome">Marie voit la fiche détaillée. Hero, KPI, SHAP affichés en moins d'une seconde. Analyse et Recos arrivent ensuite indépendamment.</div>
+  </div>
+</section>
+
+<section class="doc-section" id="user4">
+  <h2>Étape 4. Je lis l'analyse contextuelle</h2>
+
+  <div class="flow-box">
+    <div class="scenario">Scénario : la section Analyse Tempo se remplit avec l'explication LLM</div>
+    <ol>
+      <li>L'appel POST <code>/explain/{id}</code> arrive sur <code>routes.py</code></li>
+      <li>Vérifications : existence client (404) + RBAC régional (403) avec audit log pour chaque cas</li>
+      <li>Récupération score depuis pré-scoring via <code>get_score()</code></li>
+      <li>Appel au service enveloppé dans <code>asyncio.wait_for(timeout=30)</code> :
+        <span class="substep">→ cache HIT : retour en environ 5 ms, from_cache=True, cost_usd=0</span>
+        <span class="substep">→ cache MISS : construction prompt + appel OpenRouter Llama 70B (environ 2-3s)</span>
+        <span class="substep">→ log coût dans <code>data/llm_cost_log.jsonl</code></span>
+        <span class="substep">→ mise en cache TTL 86400 s</span>
+      </li>
+      <li>Si TimeoutError ou LLMProviderError : fallback texte sobre + audit log</li>
+      <li>Succès : audit log avec outcome success et extra from_cache + model</li>
+      <li>Réponse 200 avec explication + from_cache + latency_ms + cost_usd + llm_model</li>
+      <li>Front : bulle Analyse Tempo avec texte + bandeau sobre cache HIT|MISS + ms + USD</li>
+    </ol>
+    <div class="arrow-down">↓</div>
+    <div class="outcome">Marie lit une explication en français clair en 3-4 phrases. Elle voit si le résultat est frais ou mis en cache, et combien ça a coûté.</div>
+  </div>
+</section>
+
+<section class="doc-section" id="user5">
+  <h2>Étape 5. Je consulte les actions recommandées</h2>
+
+  <div class="flow-box">
+    <div class="scenario">Scénario : la checklist des actions à mener se remplit</div>
+    <ol>
+      <li>POST <code>/recommend/{id}</code> arrive sur <code>routes.py</code></li>
+      <li>Vérifications identiques à /explain : existence, RBAC, score présent</li>
+      <li>Construction du contexte features (les 7 features ML du client)</li>
+      <li>Appel <code>recommend_actions(features, churn_score)</code> :
+        <span class="substep">→ pour chaque règle, évalue la condition Python dans contexte restreint</span>
+        <span class="substep">→ <code>eval(condition, {"__builtins__": {}}, context)</code></span>
+        <span class="substep">→ exceptions silencieuses : règle non évaluable = False + warning</span>
+        <span class="substep">→ filtre et trie par priorité : haute > moyenne > basse</span>
+        <span class="substep">→ prend les 3 premières</span>
+      </li>
+      <li>Audit log + réponse 200 avec liste 0 à 3 recommandations</li>
+      <li>Front : checklist avec checkbox + puce couleur + action + justification
+        <span class="substep">→ clic sur une ligne : case cochée + texte barré + persistance localStorage</span>
+      </li>
+    </ol>
+    <div class="arrow-down">↓</div>
+    <div class="outcome">Marie voit ses 3 actions prioritaires. Elle coche celles qu'elle a traitées, l'état est conservé même après rafraîchissement.</div>
   </div>
 
-  <div id="sections"></div>
+  <div class="tip">
+    <div class="label">Tip. eval restreint</div>
+    <p>Les règles ne viennent pas d'input utilisateur. Elles sont écrites par le data scientist, sérialisées dans un pkl contrôlé. <code>__builtins__</code> vide = pas d'accès à l'environnement. Sécurité par le périmètre, pas par la syntaxe.</p>
+  </div>
+</section>
 
-  <div class="celebrate" id="celebrate">
-    <h2>Bravo — ton site est prêt 🎉</h2>
-    <p>Toutes les étapes sont validées. Il est temps de partager ton URL.</p>
+<section class="doc-section" id="user6">
+  <h2>Étape 6. Je me déconnecte</h2>
+
+  <div class="flow-box">
+    <div class="scenario">Scénario : Marie clique "Déconnexion" en haut à droite</div>
+    <ol>
+      <li>Le handler JS déclenche POST <code>/auth/logout</code> avec le cookie</li>
+      <li>Côté serveur, <code>logout_user()</code> appelle <code>request.session.clear()</code></li>
+      <li>Le navigateur reçoit la réponse, le cookie est effacé</li>
+      <li><code>app.js</code> redirige vers <code>/static/shared/login.html</code></li>
+    </ol>
+    <div class="arrow-down">↓</div>
+    <div class="outcome">Marie est déconnectée. Toute requête /auth/me renverrait maintenant 401.</div>
+  </div>
+</section>
+
+<!-- ============== PARCOURS DIRECTION ============== -->
+
+<section class="doc-section" id="userD1">
+  <h2>Étape D1. Je me connecte en tant que direction</h2>
+
+  <div class="flow-box">
+    <div class="scenario">Scénario : Claire, directrice marketing, saisit <code>direction</code> / <code>direction2026</code></div>
+    <ol>
+      <li>Claire ouvre <code>/static/shared/login.html</code> dans son navigateur</li>
+      <li>Elle saisit <code>direction</code> et <code>direction2026</code>, clique Connexion</li>
+      <li>Le JS envoie POST <code>/auth/login</code> avec credentials same-origin
+        <span class="substep">→ authenticate_user() lit le dict USERS et vérifie le hash bcrypt</span>
+        <span class="substep">→ request.session["username"] stocké côté serveur</span>
+      </li>
+      <li>La réponse HTTP 200 contient <code>{username, role: "direction", region: null, full_name: "Direction Marketing"}</code></li>
+      <li>Le JS inspecte <code>role</code> :
+        <span class="substep">→ si "conseiller" : redirect vers /static/conseiller/</span>
+        <span class="substep">→ si "direction" : redirect vers /static/direction/</span>
+      </li>
+      <li>Claire arrive sur le dashboard direction</li>
+    </ol>
+    <div class="arrow-down">↓</div>
+    <div class="outcome">Même mécanique d'auth que le conseiller. Seule la cible de redirection change. Direction a <code>region: null</code> = signal RBAC pour accès à toutes les régions.</div>
+  </div>
+</section>
+
+<section class="doc-section" id="userD2">
+  <h2>Étape D2. Je consulte le dashboard business + ML Ops</h2>
+
+  <div class="flow-box">
+    <div class="scenario">Scénario : Claire est sur /static/direction/index.html</div>
+    <ol>
+      <li>Au chargement, <code>app.js</code> appelle <code>loadMe()</code> puis <code>loadDashboard()</code></li>
+      <li><code>loadMe()</code> GET /auth/me et remplit la topbar avec initiales + nom</li>
+      <li><code>loadDashboard()</code> GET /dashboard/direction, cœur de la brique 7</li>
+      <li>Côté serveur, l'endpoint compose <strong>3 vues</strong> :
+        <span class="substep">→ <strong>Portfolio stats</strong> depuis le pré-scoring en mémoire (zéro appel ML)</span>
+        <span class="substep">→ <strong>ML Ops stats</strong> depuis read_cost_log(since=mois) + read_cost_log(since=24h)</span>
+        <span class="substep">→ <strong>Top 10 clients</strong> depuis get_all_scores() trié décroissant</span>
+      </li>
+      <li>La réponse HTTP 200 renvoie un JSON structuré en 3 blocs</li>
+      <li>Côté front, 3 fonctions de rendu s'enchaînent :
+        <span class="substep">→ renderPortfolioSection : donut SVG 3 arcs + 4 stats business</span>
+        <span class="substep">→ renderMLOpsSection : 4 KPI cards (coût mois, coût 24h, hit rate, latence)</span>
+        <span class="substep">→ renderTopList : 10 lignes rang + nom + région + score + barre colorée</span>
+      </li>
+      <li>Chaque ligne du top 10 est cliquable → ouvre vue conseiller onglet</li>
+      <li>Un bouton "Actualiser" en haut à droite relance loadDashboard()</li>
+    </ol>
+    <div class="arrow-down">↓</div>
+    <div class="outcome">Claire voit en une page : la santé du portefeuille, le coût du système, les 10 clients à traiter en priorité. Latence serveur ~1 ms sur 1000 clients. Zéro appel ML, zéro appel LLM.</div>
   </div>
 
-  <p class="footer-note">Carnet de bord local · Tes données restent dans ton navigateur</p>
+  <div class="tip">
+    <div class="label">Tip. Deux voix sur une même page</div>
+    <p>Le dashboard parle au <strong>Comex</strong> (voix business : urgence, portefeuille) et à la <strong>DSI</strong> (voix technique : coûts, latence, cache). Les deux clients du produit sont servis simultanément.</p>
+  </div>
+</section>
+
+<section class="doc-section" id="userD3">
+  <h2>Étape D3. Je bascule vers la vue conseiller</h2>
+
+  <div class="flow-box">
+    <div class="scenario">Scénario : Claire veut voir le détail d'un client</div>
+    <ol>
+      <li>Claire clique sur une ligne du top 10 (ou "Vue conseiller" en topbar)</li>
+      <li><code>window.open('/static/conseiller/index.html', '_blank')</code> ouvre un nouvel onglet</li>
+      <li>Le même cookie session est transmis automatiquement (same-origin)</li>
+      <li>/auth/me répond <code>{role: "direction", region: null}</code></li>
+      <li>Le JS du conseiller appelle /clients/mine</li>
+      <li>Côté serveur, filter_clients_by_user reçoit <code>user.region == None</code>
+        <span class="substep">→ retourne la liste complète sans filtre (direction voit tout)</span>
+      </li>
+      <li>1000 clients remontent, triés par score</li>
+    </ol>
+    <div class="arrow-down">↓</div>
+    <div class="outcome">Claire se retrouve dans la vue conseiller avec les 1000 clients visibles. Même produit, deux rôles, zéro code dupliqué côté front.</div>
+  </div>
+</section>
+
+<section class="doc-section" id="userD4">
+  <h2>Étape D4. Je consulte la dérive et ouvre le rapport Evidently</h2>
+
+  <div class="flow-box">
+    <div class="scenario">Scénario : Claire voit la section "Dérive des données" sur son dashboard</div>
+    <ol>
+      <li>En-dessous de ML Ops apparaît la section "Dérive des données (Evidently)"</li>
+      <li>Visuellement, Claire voit :
+        <span class="substep">→ Gros label "DÉTECTÉE" en rouge</span>
+        <span class="substep">→ Ratio "3/6 features dérivées (50%)"</span>
+        <span class="substep">→ 3 badges rouges : solde_moyen, nb_interactions_90j, derniere_interaction_jours</span>
+        <span class="substep">→ Date du dernier calcul</span>
+      </li>
+      <li>Deux boutons en haut à droite :
+        <span class="substep">→ "Voir le rapport Evidently" : ouvre nouvel onglet</span>
+        <span class="substep">→ "Vérifier maintenant" : force un recalcul</span>
+      </li>
+      <li>Clic sur "Voir le rapport" : GET /monitoring/drift/report
+        <span class="substep">→ L'endpoint lit data/evidently_reports/latest.html</span>
+        <span class="substep">→ Renvoie le HTML brut via HTMLResponse</span>
+      </li>
+      <li>Le navigateur rend la page Evidently :
+        <span class="substep">→ Titre "Data Drift Report"</span>
+        <span class="substep">→ Tableau résumé par feature</span>
+        <span class="substep">→ Graphiques distributions baseline (bleu) vs current (rouge)</span>
+      </li>
+      <li>Clic sur "Vérifier maintenant" : POST /monitoring/drift/recompute
+        <span class="substep">→ Evidently recalcule, nouveau rapport historisé + latest.html régénéré</span>
+        <span class="substep">→ Dashboard se rafraîchit</span>
+      </li>
+    </ol>
+    <div class="arrow-down">↓</div>
+    <div class="outcome">Claire a maintenant une vue complète : les données qui alimentent le modèle ne ressemblent plus à celles sur lesquelles il a été entraîné. Le modèle continue de prédire, mais ses prédictions deviennent de moins en moins fiables.</div>
+  </div>
+
+  <div class="tip">
+    <div class="label">Tip. Pattern narratif pour le talk</div>
+    <p>Le monitoring voit la dérive, mais si personne ne regarde le dashboard, l'incident se prépare en silence. <strong>C'est l'histoire de 80% des incidents MLOps en entreprise.</strong></p>
+  </div>
+</section>
+
+<!-- ============== INFRASTRUCTURE ============== -->
+
+<section class="doc-section" id="infraA">
+  <h2>Infra A. Au boot du serveur</h2>
+
+  <div class="flow-box">
+    <div class="scenario">Scénario : uvicorn app.main:app --reload --port 8000 démarre</div>
+    <ol>
+      <li>FastAPI charge l'app, le <code>lifespan</code> démarre</li>
+      <li><code>load_clients()</code> lit <code>data/clients_baseline.csv</code>
+        <span class="substep">→ 1000 lignes parsées, singleton <code>_all_clients</code></span>
+      </li>
+      <li><code>load_model()</code> lit <code>models/xgboost_churn.pkl</code>
+        <span class="substep">→ pickle.load reconstitue XGBoostClassifier, singleton <code>_model</code></span>
+      </li>
+      <li><code>load_explainer()</code> lit <code>models/shap_explainer.pkl</code>
+        <span class="substep">→ singleton <code>_explainer</code></span>
+      </li>
+      <li><code>load_reco_rules()</code> lit <code>models/reco_model.pkl</code>
+        <span class="substep">→ dict {version, rules}, singleton <code>_reco_rules</code></span>
+        <span class="substep">→ log : "Reco rules chargees (version 1.0, 5 regles)"</span>
+      </li>
+      <li><code>precompute_all_scores()</code> boucle sur les 1000 clients :
+        <span class="substep">→ predict_churn → urgence_from_score → get_top_features (top 5)</span>
+        <span class="substep">→ stocke <code>ScoreData</code> dans <code>_scored_clients</code></span>
+        <span class="substep">→ log final : "Pre-scoring termine : 1000 clients en 1.23s (813/s)"</span>
+      </li>
+      <li>SessionMiddleware activé + routers inclus + "Application startup complete"</li>
+    </ol>
+    <div class="arrow-down">↓</div>
+    <div class="outcome">Le serveur est prêt. 1000 scores sont déjà en mémoire. Les requêtes /score, /explain et /recommend seront ultra-rapides.</div>
+  </div>
+</section>
+
+<section class="doc-section" id="infraB">
+  <h2>Infra B. Chaque appel LLM</h2>
+
+  <div class="flow-box">
+    <div class="scenario">Scénario : un endpoint appelle explain_service.explain_score(...)</div>
+    <ol>
+      <li>Construction cache key : hash(client_id, features, model)</li>
+      <li>Lookup dans TTLCache interne :
+        <span class="substep">→ cache HIT : retour en 5 ms, 0 appel réseau, 0 USD</span>
+        <span class="substep">→ cache MISS : continuer</span>
+      </li>
+      <li>Prompt système environ 150 tokens (role banking, français, concis)</li>
+      <li>Prompt user : nom, prénom, score, features en bullet points</li>
+      <li>Appel <code>provider.complete(...)</code> :
+        <span class="substep">→ singleton httpx.AsyncClient partagé</span>
+        <span class="substep">→ POST OpenRouter avec headers Authorization + Referer + Title</span>
+        <span class="substep">→ retry 3x avec backoff 1-2-4s sur 429 et 5xx</span>
+        <span class="substep">→ timeout 30 secondes</span>
+      </li>
+      <li>OpenRouter route vers Llama 70B : environ 2-3 secondes, 50 à 150 tokens output</li>
+      <li>Retour LLMResponse avec coût calculé via dict pricing.py</li>
+      <li>log_llm_call() écrit JSONL : ts, model, tokens, cost_usd, latency_ms</li>
+      <li>Mise en cache de la réponse avec TTL 86400 s</li>
+    </ol>
+    <div class="arrow-down">↓</div>
+    <div class="outcome">Le prochain appel pour le même client sera un HIT. 0 réseau. 0 USD. 5 ms. Même qualité.</div>
+  </div>
+</section>
+
+<section class="doc-section" id="infraC">
+  <h2>Infra C. Chaque requête RBAC</h2>
+
+  <div class="flow-box">
+    <div class="scenario">Scénario : un endpoint protégé reçoit une requête</div>
+    <ol>
+      <li>FastAPI résout la dépendance <code>Depends(get_current_user)</code></li>
+      <li><code>get_current_user()</code> lit <code>request.session.get("username")</code>
+        <span class="substep">→ si None : HTTPException 401 "Non authentifie"</span>
+        <span class="substep">→ si présent : récupère l'User</span>
+      </li>
+      <li>Si endpoint utilise <code>Depends(require_direction)</code> :
+        <span class="substep">→ vérifie user.role == "direction" sinon 403</span>
+      </li>
+      <li>Pour un endpoint listing comme /clients/mine :
+        <span class="substep">→ filter_clients_by_user applique le filtre régional</span>
+        <span class="substep">→ cette ligne portera l'incident 3 (semaine 4)</span>
+      </li>
+      <li>Pour un endpoint ressource comme /score/{id} :
+        <span class="substep">→ vérification explicite region du client vs region user</span>
+        <span class="substep">→ 403 si incompatible, défense en profondeur</span>
+      </li>
+    </ol>
+    <div class="arrow-down">↓</div>
+    <div class="outcome">Le RBAC fonctionne en 2 couches : filtre pour les listings, vérification explicite pour les ressources individuelles.</div>
+  </div>
+</section>
+
+<section class="doc-section" id="infraD">
+  <h2>Infra D. Vue agrégée direction, pattern lecture pure</h2>
+
+  <div class="flow-box">
+    <div class="scenario">Scénario : la direction demande le dashboard global</div>
+    <ol>
+      <li>GET /dashboard/direction arrive avec cookie session direction</li>
+      <li>FastAPI résout <code>Depends(require_direction)</code>
+        <span class="substep">→ vérifie user.role == "direction" sinon 403</span>
+      </li>
+      <li>Le endpoint est purement <strong>orchestrateur</strong> :
+        <span class="substep">→ aucun appel ML, LLM, base de données</span>
+        <span class="substep">→ compose 3 sources déjà en mémoire ou sur disque</span>
+      </li>
+      <li>Source 1 : scores pré-calculés en mémoire via <code>get_all_scores()</code></li>
+      <li>Source 2 : log coût LLM sur disque via <code>read_cost_log(since=first_of_month)</code> et <code>read_cost_log(since=24h_ago)</code></li>
+      <li>Source 3 : clients en mémoire via <code>get_all_clients()</code>, indexé par id O(1)</li>
+      <li>Agrégation Python : urgences, pourcentages, score moyen, taux churn, top 10 enrichi</li>
+      <li>Retour : <code>DashboardKPI</code> Pydantic validé automatiquement</li>
+    </ol>
+    <div class="arrow-down">↓</div>
+    <div class="outcome">Le endpoint renvoie en ~1 ms sur 1000 clients. Zéro I/O base, zéro inférence, zéro appel réseau. Juste de la composition de données déjà payées au boot.</div>
+  </div>
+
+  <div class="tip">
+    <div class="label">Tip. Pattern vue agrégée pure</div>
+    <p>Composition sans mutation, sans effet de bord. Si demain on migre llm_cost_log.jsonl vers Postgres, on change <strong>uniquement</strong> read_cost_log(). routes.py et app.js ne bougent pas. <strong>C'est ça l'archi hexagonale appliquée à l'IA.</strong></p>
+  </div>
+
+  <div class="tip">
+    <div class="label">Tip. Trade-off scalabilité assumé</div>
+    <p>Si le portefeuille passe à 1M clients, <code>get_all_scores()</code> ne tient plus en mémoire. C'est à ce moment-là qu'on introduit une base, pas avant. Simplicité maintenant, migration en 2027 si besoin.</p>
+  </div>
+</section>
+
+<section class="doc-section" id="infraE">
+  <h2>Infra E. Monitoring Evidently, adapter branché à chaud</h2>
+
+  <div class="flow-box">
+    <div class="scenario">Scénario : la dérive des données est calculée et exposée</div>
+    <ol>
+      <li>Au boot, le lifespan appelle <code>run_drift_report()</code>
+        <span class="substep">→ Lit clients_baseline.csv (snapshot d'entraînement, 1000 lignes)</span>
+        <span class="substep">→ Lit clients_current.csv (données actuelles, 1000 lignes)</span>
+        <span class="substep">→ Garde seulement 6 features numériques</span>
+      </li>
+      <li>Evidently construit un <code>Report(metrics=[DataDriftPreset()])</code>
+        <span class="substep">→ Wasserstein distance pour les features continues</span>
+        <span class="substep">→ Chi² pour les catégorielles si présentes</span>
+      </li>
+      <li>Verdict global : plus de 50% des features dérivées = dataset_drift True</li>
+      <li>Résultat extrait en dict : drift_detected, nb_features_drifted, drifted_features, share_drifted, computed_at</li>
+      <li>Deux fichiers HTML sur disque :
+        <span class="substep">→ data/evidently_reports/drift_&lt;timestamp&gt;.html (historisé)</span>
+        <span class="substep">→ data/evidently_reports/latest.html (courant)</span>
+      </li>
+      <li>Le dict de synthèse est mis en cache mémoire via <code>_LAST_REPORT</code></li>
+      <li>Chaque GET /dashboard/direction lit ce cache (instantané)</li>
+      <li>Chaque POST /monitoring/drift/recompute refait le cycle complet (~500 ms)</li>
+    </ol>
+    <div class="arrow-down">↓</div>
+    <div class="outcome">Le monitoring tourne automatiquement au boot et à la demande. 3 features dérivées visibles dès le premier chargement. Le rapport HTML complet est consultable en 1 clic.</div>
+  </div>
+
+  <div class="tip">
+    <div class="label">Tip. Adapter hexagonal pur</div>
+    <p>drift.py ne connaît ni le dashboard ni les endpoints. Si on remplace Evidently par Nannyml ou Alibi Detect, <strong>on change uniquement ce fichier</strong>.</p>
+  </div>
+
+  <div class="tip">
+    <div class="label">Tip. Un adapter, deux consommateurs</div>
+    <p>Le même code sert 2 formats : dict JSON synthétique pour le dashboard + HTML brut pour le rapport détaillé. <strong>Zéro duplication.</strong></p>
+  </div>
+
+  <div class="tip">
+    <div class="label">Tip. Point d'injection incident 2 préservé</div>
+    <p><code>scripts/init_db.py</code> charge actuellement baseline. Changement vers current déclenchera la dérive dans le modèle réel (semaine 4 du cours Devoteam).</p>
+  </div>
+</section>
+
+<!-- ============== BRIQUES DÉTAILLÉES ============== -->
+
+<section class="doc-section" id="b1">
+  <h2>Brique 1. LLMProvider + OpenRouter <span class="brique-status done">Livrée 20/10/2026</span></h2>
+
+  <h3>Objectif</h3>
+  <p>Construire une <strong>interface abstraite</strong> pour parler à n'importe quel LLM, avec une première implémentation OpenRouter robuste.</p>
+
+  <h3>Fichiers créés</h3>
+  <pre><code>app/llm/
+├── __init__.py
+├── base.py                  Interface LLMProvider + dataclass LLMResponse
+├── pricing.py               Dict de pricing + estimate_cost_usd()
+└── adapters.py              OpenRouterProvider async + factory
+
+app/monitoring/
+└── llm_cost.py              log_llm_call() vers data/llm_cost_log.jsonl</code></pre>
+
+  <h3>Flux pas à pas</h3>
+  <p>Voir aussi la section <a href="#infraB">Infra B. Chaque appel LLM</a> pour le flux complet.</p>
+
+  <h3>Métriques réelles validées</h3>
+  <div class="metric-callout">{
+  "ts": "2026-10-20T09:55:49.688167",
+  "model": "meta-llama/llama-3.3-70b-instruct",
+  "prompt_tokens": 68,
+  "completion_tokens": 54,
+  "cost_usd": 3.7e-05,
+  "latency_ms": 594
+}</div>
+
+  <div class="tip">
+    <div class="label">Tip. Singleton httpx</div>
+    <p>Chaque <code>httpx.AsyncClient()</code> ouvre un pool. Un singleton réutilise la connexion TCP, environ 50 ms économisés par appel. Sur 1000 appels par jour : 50 secondes économisées quotidiennement.</p>
+  </div>
+
+  <div class="tip">
+    <div class="label">Tip. Retry seulement sur 429 et 5xx</div>
+    <p>4xx hors 429 = erreur client, retry inutile. 429 = rate limit. 5xx = serveur. <strong>Règle d'or : jamais retry une erreur dont la cause ne va pas disparaître.</strong></p>
+  </div>
+</section>
+
+<section class="doc-section" id="b2">
+  <h2>Brique 2. Cache LRU + explain service <span class="brique-status done">Livrée 20/10/2026</span></h2>
+
+  <h3>Objectif</h3>
+  <p>Construire une <strong>couche de cache intelligent</strong> et un <strong>service d'explication</strong> qui orchestre cache et LLM.</p>
+
+  <h3>Flux pas à pas</h3>
+  <div class="flow-box">
+    <div class="scenario">Scénario : await explain_score(client_id, prénom, nom, score, top_features)</div>
+    <ol>
+      <li>Construction cache key : hash(client_id, features, model)</li>
+      <li>Lookup dans <code>_explanation_cache.get(cache_key)</code>
+        <span class="substep">→ HIT : retour en 5 ms, from_cache=True, cost=0</span>
+        <span class="substep">→ MISS : continuer</span>
+      </li>
+      <li>Construction du prompt user via <code>_build_user_prompt()</code></li>
+      <li>Appel <code>provider.complete(prompt, system, max_tokens=300, temperature=0.3)</code></li>
+      <li>Mise en cache avec TTL 86400 s</li>
+      <li>Retour <code>ExplanationResult</code> enrichi</li>
+    </ol>
+    <div class="arrow-down">↓</div>
+    <div class="outcome">Le prochain appel pour le même client (features identiques, même modèle) sera un HIT.</div>
+  </div>
+
+  <div class="approach-b">
+    <div class="label">Note approche B, Incident 1</div>
+    <p>Le service contient <strong>3 variables sensibles</strong> modifiées en semaine 4 : <code>CACHE_TTL_SECONDS</code>, <code>SYSTEM_PROMPT</code>, <code>MAX_TOKENS</code>. <strong>Aucun marqueur dans le code</strong>.</p>
+  </div>
+
+  <h3>Métriques réelles</h3>
+  <table>
+    <thead><tr><th>Test</th><th>from_cache</th><th>Tokens</th><th>Coût</th><th>Latence</th></tr></thead>
+    <tbody>
+      <tr><td>Marie MISS</td><td>False</td><td>329+124</td><td>0.000125 USD</td><td>2922 ms</td></tr>
+      <tr><td>Marie HIT</td><td><strong>True</strong></td><td>0</td><td><strong>0.0 USD</strong></td><td>~5 ms</td></tr>
+      <tr><td>Karim MISS</td><td>False</td><td>264+146</td><td>0.000119 USD</td><td>6890 ms</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="doc-section" id="b3">
+  <h2>Brique 3. Dataset + XGBoost + SHAP <span class="brique-status done">Livrée 20/10/2026</span></h2>
+
+  <h3>Objectif</h3>
+  <p>Construire la <strong>fondation ML</strong> : dataset synthétique de 1000 clients, XGBoost de scoring, SHAP explainer.</p>
+
+  <h3>Comprendre XGBoost, SHAP et LLM</h3>
+  <ul>
+    <li><strong>XGBoost (le devin)</strong> : donne un score 0.0 à 1.0. Boîte noire.</li>
+    <li><strong>SHAP (le détective)</strong> : <strong>N'EST PAS un modèle ML</strong>, algorithme mathématique qui analyse XGBoost. Preuve : pas de <code>.fit()</code>.</li>
+    <li><strong>LLM (le traducteur)</strong> : transforme les shap_values en français lisible. <strong>Ne calcule rien</strong>.</li>
+  </ul>
+  <p><strong>En une phrase</strong> : XGBoost dit <strong>COMBIEN</strong>, SHAP dit <strong>POURQUOI</strong>, LLM dit <strong>COMMENT</strong> l'expliquer.</p>
+
+  <h3>Métriques réelles</h3>
+  <div class="metric-callout">Accuracy          : 0.965
+AUC-ROC           : 0.944
+Precision churner : 0.83
+Recall churner    : 0.67
+
+Client sain   : score = 0.000 (low)
+Client risque : score = 0.999 (high)
+
+SHAP top 5 (client à risque):
+  1. nb_interactions_90j      = 1     | shap = +3.770
+  2. solde_moyen              = 850.0 | shap = +1.115
+  3. produits_detenus         = 1     | shap = +1.001
+  4. canal_prefere            = 3     | shap = +0.763
+  5. derniere_interaction_j   = 75    | shap = +0.515</div>
+
+  <div class="piege">
+    <div class="label">Piège. Ordre des features critique</div>
+    <p>XGBoost attend un ordre précis. Si tu passes dans le mauvais ordre, il mélange les valeurs <strong>sans erreur Python</strong>. Prédictions aberrantes silencieuses. <strong>Solution : constante <code>FEATURE_ORDER</code>.</strong></p>
+  </div>
+</section>
+
+<section class="doc-section" id="b4">
+  <h2>Brique 4. Auth + session cookies <span class="brique-status done">Livrée 20/10/2026</span></h2>
+
+  <h3>Flux pas à pas</h3>
+  <p>Voir sections <a href="#user1">Étape 1 (login)</a> et <a href="#user6">Étape 6 (logout)</a> du parcours utilisateur.</p>
+
+  <h3>Les 3 utilisateurs de démo</h3>
+  <table>
+    <thead><tr><th>Username</th><th>Password</th><th>Role</th><th>Région</th></tr></thead>
+    <tbody>
+      <tr><td><code>conseiller_lille</code></td><td><code>conseiller_lille2026</code></td><td>conseiller</td><td>lille</td></tr>
+      <tr><td><code>conseiller_marseille</code></td><td><code>conseiller_marseille2026</code></td><td>conseiller</td><td>marseille</td></tr>
+      <tr><td><code>direction</code></td><td><code>direction2026</code></td><td>direction</td><td>voit tout</td></tr>
+    </tbody>
+  </table>
+
+  <div class="tip">
+    <div class="label">Tip. Timing attack defense</div>
+    <p>Si l'user n'existe pas, bcrypt bidon avant False. Timing uniforme = sécurité.</p>
+  </div>
+
+  <div class="piege">
+    <div class="label">Piège. Hash bcrypt stocké en str</div>
+    <p><code>ValueError: Invalid salt</code>. <strong>Toujours <code>b'$2b$12$...'</code> dans le dict.</strong></p>
+  </div>
+</section>
+
+<section class="doc-section" id="b5">
+  <h2>Brique 5. RBAC + /clients/mine <span class="brique-status done">Livrée 20/10/2026</span></h2>
+
+  <h3>Flux pas à pas</h3>
+  <p>Voir sections <a href="#user2">Étape 2</a> et <a href="#infraC">Infra C. Chaque requête RBAC</a>.</p>
+
+  <div class="approach-b">
+    <div class="label">Note approche B, Incident 3</div>
+    <p>La fonction <code>filter_clients_by_user()</code> contient la ligne inversée semaine 4 : <code>return [c for c in clients if c["region"] == user.region]</code>. <strong>Aucun marqueur dans le code.</strong></p>
+  </div>
+
+  <h3>Tests réels validés</h3>
+  <table>
+    <thead><tr><th>Rôle</th><th>Clients visibles</th><th>Régions</th></tr></thead>
+    <tbody>
+      <tr><td>conseiller_lille</td><td>489</td><td>{lille}</td></tr>
+      <tr><td>conseiller_marseille</td><td>511</td><td>{marseille}</td></tr>
+      <tr><td>direction</td><td>1000</td><td>{lille, marseille}</td></tr>
+    </tbody>
+  </table>
+  <p><strong>489 + 511 = 1000</strong>. Aucun client oublié ni doublé.</p>
+</section>
+
+<section class="doc-section" id="b6">
+  <h2>Brique 6. Front conseiller V2 UX premium <span class="brique-status done">Livrée 20/10/2026</span></h2>
+
+  <h3>Évolution V1 vers V2 UX</h3>
+
+  <h4>V1 fonctionnelle (initialement)</h4>
+  <ul>
+    <li>Table HTML plate avec 7 colonnes</li>
+    <li>489 lignes affichées, scroll vertical imposé</li>
+    <li>Fiche détaillée en liste sans hiérarchie</li>
+    <li>Placeholders textuels pour LLM et recos</li>
+  </ul>
+
+  <h4>V2 UX premium (refonte Apple HIG)</h4>
+  <ul>
+    <li>Layout grid : topbar 56px + sidebar 320px + main scrollable</li>
+    <li>Sidebar : recherche live + 3 pills urgence + liste 2 lignes par client + puce couleur</li>
+    <li>Hero zone : nom en 22px + méta + gauge circulaire SVG 72px avec stroke animé</li>
+    <li>4 KPI cards : icône SVG + valeur grosse (24px) + sous-label petit (11px)</li>
+    <li>Section SHAP : liste avec flèches directionnelles colorées</li>
+    <li>Section Analyse Tempo : bulle de chat + header "Tempo Analyst" + input désactivé "bientôt"</li>
+    <li>Section Recos : checklist cliquable, état persisté dans localStorage par client_id</li>
+  </ul>
+
+  <h3>Flux pas à pas</h3>
+  <p>Voir sections <a href="#user2">Étape 2</a> à <a href="#user5">Étape 5</a> du parcours utilisateur.</p>
+
+  <h3>Palette CSS V2</h3>
+  <pre><code>/* Neutres Apple HIG */
+--text-primary:   #1a1a1a;
+--text-secondary: #4a4a4a;
+--text-tertiary:  #8a8a8a;
+--text-quaternary:#b4b4b4;
+
+--surface-0:      #fafaf7;  /* fond */
+--surface-1:      #ffffff;  /* cards */
+--surface-2:      #f3f3f0;
+--surface-3:      #e8e8e4;
+
+/* Couleurs métier (conservées) */
+--accent:         #2d4a66;  /* bleu banking */
+--highlight:      #8b7355;  /* brun alertes */
+--success:        #4a6a4a;  /* vert validations */
+--danger:         #9c3b3b;  /* rouge erreurs */</code></pre>
+
+  <div class="tip">
+    <div class="label">Tip. Gauge SVG avec stroke-dasharray</div>
+    <p>Calcul : <code>circumference = 2 * PI * r</code>. <code>stroke-dashoffset = circumference * (1 - scorePct / 100)</code>. Animation fluide avec transition CSS.</p>
+  </div>
+
+  <div class="piege">
+    <div class="label">Piège. Cache navigateur après refonte</div>
+    <p><code>Uncaught TypeError: Cannot read properties of null</code>. <strong>Solution : Ctrl + Shift + R systématique</strong> après refonte HTML. Ou F12 + "Disable cache" coché.</p>
+  </div>
+</section>
+
+<section class="doc-section" id="b10a">
+  <h2>Brique 10a. /score + pré-scoring <span class="brique-status done">Livrée 20/10/2026</span></h2>
+
+  <h3>Flux pas à pas</h3>
+  <p>Voir sections <a href="#user3">Étape 3</a> et <a href="#infraA">Infra A</a>.</p>
+
+  <h3>Comportement attendu</h3>
+  <ul>
+    <li>Table : colonne Score % + colonne Urgence HIGH/MED/LOW colorés</li>
+    <li>Tri par score décroissant : plus à risque en haut</li>
+    <li>Fiche : titre enrichi + Top 5 facteurs SHAP avec flèches</li>
+  </ul>
+
+  <div class="tip">
+    <div class="label">Tip. Pré-scoring vs lazy loading</div>
+    <p>Pour 1000 clients, pré-scorer prend 1 à 2 secondes au boot. Les requêtes HTTP deviennent des accès dict O(1). Trade-off : léger boot plus lent contre énorme gain en latence utilisateur.</p>
+  </div>
+</section>
+
+<section class="doc-section" id="b10b">
+  <h2>Brique 10b. /explain + cache LLM + audit RGPD <span class="brique-status done">Livrée 20/10/2026</span></h2>
+
+  <h3>Flux pas à pas</h3>
+  <p>Voir section <a href="#user4">Étape 4. Je lis l'analyse contextuelle</a>.</p>
+
+  <h3>Approche hexagonale appliquée</h3>
+  <p>Point clé pour le talk 1er décembre : <strong>le log coût LLM est dans l'adapter LLM, le log audit RGPD est dans le centre (endpoint)</strong>. Deux responsabilités distinctes, deux fichiers distincts, deux couches distinctes. C'est de l'hexagonal appliqué.</p>
+
+  <h3>Format audit_log.jsonl</h3>
+  <pre><code>{
+  "ts": "2026-10-20T19:52:14.337",
+  "event_type": "explain_requested",
+  "username": "conseiller_lille",
+  "user_role": "conseiller",
+  "client_id": 426,
+  "outcome": "success",
+  "extra": {
+    "from_cache": false,
+    "model": "meta-llama/llama-3.3-70b-instruct"
+  }
+}</code></pre>
+
+  <div class="tip">
+    <div class="label">Tip. Audit séparé du log coût</div>
+    <p>Le log coût LLM vit dans l'adapter (infra). Le log audit vit dans l'endpoint (centre). L'adapter ne sait pas qui est l'user. L'endpoint ne sait pas combien coûte le LLM. <strong>Chacun son rôle, chacun son fichier.</strong></p>
+  </div>
+
+  <div class="piege">
+    <div class="label">Piège. Venv perdu après pause</div>
+    <p><code>ModuleNotFoundError: No module named 'xgboost'</code>. Cause : Git Bash a repris Python 3.13 système. <strong>Solution : <code>source venv/Scripts/activate</code> systématique.</strong></p>
+  </div>
+</section>
+
+<section class="doc-section" id="b10c">
+  <h2>Brique 10c. /recommend + règles métier <span class="brique-status done">Livrée 20/10/2026</span></h2>
+
+  <h3>Flux pas à pas</h3>
+  <p>Voir section <a href="#user5">Étape 5. Je consulte les actions recommandées</a>.</p>
+
+  <h3>Format reco_model.pkl</h3>
+  <pre><code>{
+  'version': '1.0',
+  'rules': [
+    {'condition': 'score_churn >= 0.7 and solde_moyen >= 10000',
+     'action': 'RDV conseiller urgent + offre fidelite premium',
+     'priorite': 'haute',
+     'justification': '...'},
+    # ... 4 autres règles
+  ]
+}</code></pre>
+
+  <h3>Sécurité du eval()</h3>
+  <pre><code>eval(condition, {"__builtins__": {}}, context_features_et_score)</code></pre>
+  <p>Acceptable car : règles pas d'input utilisateur, écrites par data scientist, sérialisées dans pkl contrôlé, <code>__builtins__</code> vide, exceptions silencieuses.</p>
+
+  <div class="tip">
+    <div class="label">Tip. Priorité en dict d'ordre</div>
+    <p><code>PRIORITY_ORDER = {"haute": 0, "moyenne": 1, "basse": 2}</code>. Simple, clair, extensible.</p>
+  </div>
+</section>
+
+<section class="doc-section" id="b7">
+  <h2>Brique 7. Dashboard direction V2 UX premium <span class="brique-status done">Livrée 22/10/2026</span></h2>
+
+  <h3>Objectif</h3>
+  <p>Construire la vue direction du produit. Deux cibles sur une même page : le <strong>Comex</strong> (voix business, répartition d'urgence, taux churn prédit, portefeuille) et la <strong>DSI</strong> (voix technique, coûts LLM, hit rate cache, latence moyenne). Boucler le produit avant la démo Sloan en appliquant la grammaire V2 UX premium de la vue conseiller.</p>
+
+  <h3>Fichiers créés ou modifiés</h3>
+  <pre><code>app/monitoring/
+├── llm_cost.py         Nettoyé approche B + ajout read_cost_log()
+└── drift.py            Nettoyé approche B
+
+app/core/
+├── schemas.py          Ajout TopClientEntry, PortfolioStats, MLOpsStats
+└── routes.py           Implémentation complète GET /dashboard/direction
+
+static/direction/
+├── index.html          Refonte V2 UX : topbar + sections + donut + top 10
+└── app.js              Rendu complet : donut SVG, 4 KPI cards, top 10 cliquable</code></pre>
+
+  <h3>Flux pas à pas : voir Étapes D1 à D3 du parcours utilisateur + Infra D</h3>
+
+  <h3>Les 7 décisions prises</h3>
+  <table>
+    <thead><tr><th>Décision</th><th>Choix</th><th>Raison</th></tr></thead>
+    <tbody>
+      <tr><td>Calcul des KPI</td><td>À chaque requête</td><td>1 ms sur 1000 clients, pas d'optim prématurée</td></tr>
+      <tr><td>Visualisations</td><td>SVG inline sobre</td><td>Cohérent avec gauge brique 10a, zéro dépendance externe</td></tr>
+      <tr><td>Top clients à risque</td><td>Top 10 toutes régions</td><td>Simplicité pour la démo Sloan</td></tr>
+      <tr><td>Période coûts LLM</td><td>Mois courant + 24h glissantes</td><td>2 cartes : Comex (budget) + DSI (détection explosion)</td></tr>
+      <tr><td>Refresh de la page</td><td>Statique + bouton Actualiser</td><td>C-level feel, pas de polling intempestif</td></tr>
+      <tr><td>Drill-down top 10</td><td>Clic → vue conseiller</td><td>Réutilise V2 UX existante, zéro code dupliqué</td></tr>
+      <tr><td>Switch dir → conseiller</td><td>Bouton "Vue conseiller" topbar</td><td>Direction peut explorer partout</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Structure de la réponse /dashboard/direction</h3>
+  <pre><code>{
+  "portfolio": {
+    "total_clients": 1000,
+    "nb_high": 142, "nb_medium": 237, "nb_low": 621,
+    "pct_high": 14.2, "pct_medium": 23.7, "pct_low": 62.1,
+    "score_moyen": 0.342,
+    "taux_churn_predit": 14.2
+  },
+  "ml_ops": {
+    "cost_llm_mois_courant_usd": 0.00037,
+    "cost_llm_24h_usd": 0.00037,
+    "nb_appels_mois": 3,
+    "nb_appels_24h": 3,
+    "hit_rate_pct": 33.3,
+    "avg_latency_ms": 3302,
+    "last_call_at": "2026-10-22T09:12:33"
+  },
+  "top_clients_risque": [
+    {"id": 426, "prenom": "...", "nom": "...", "region": "Lille",
+     "score_churn": 0.94, "urgence": "high"}
+  ]
+}</code></pre>
+
+  <h3>Visualisations SVG inline</h3>
+  <p><strong>Donut 3 arcs (répartition urgence)</strong> : 3 cercles SVG concentriques avec <code>stroke-dasharray</code> définissant la longueur de l'arc et <code>stroke-dashoffset</code> définissant où il commence. Chaque arc commence là où le précédent s'arrête. Rotation -90° pour partir du haut.</p>
+  <p><strong>Barres horizontales (top 10)</strong> : largeur proportionnelle au score du client, normalisée sur le score max du top 10. Couleurs selon urgence : danger / highlight / success.</p>
+
+  <h3>Pattern archi hexagonale</h3>
+  <p>Le dashboard direction est un <strong>exemple parfait</strong> du pattern hexagonal pour le talk :</p>
+  <ul>
+    <li><strong>Adapter technique</strong> <code>app/monitoring/llm_cost.py</code> : read_cost_log() scanne le JSONL. Ne connaît pas qui l'appelle.</li>
+    <li><strong>Centre métier</strong> <code>app/core/routes.py</code> : get_direction_dashboard() agrège les 3 sources. Ne connaît pas comment c'est stocké.</li>
+    <li><strong>Adapter présentation</strong> <code>static/direction/app.js</code> : renderDonut(), renderPortfolioSection(). Ne connaît pas d'où viennent les données.</li>
+  </ul>
+  <p><strong>Démonstration en 1 phrase</strong> : si demain on migre llm_cost_log.jsonl vers Postgres, on change uniquement <code>read_cost_log()</code>. routes.py et app.js ne bougent pas.</p>
+
+  <h3>Nettoyage approche B</h3>
+  <p>Au moment de livrer la brique 7, deux fichiers contenaient encore des commentaires INCIDENT inline : <code>llm_cost.py</code> (INCIDENT 1) et <code>drift.py</code> (INCIDENT 2). Les deux ont été nettoyés. <code>grep -rn "INCIDENT" app/ --exclude-dir=__pycache__</code> renvoie désormais zéro ligne. <strong>Approche B officiellement pure dans le code source.</strong></p>
+
+  <div class="tip">
+    <div class="label">Tip. Path() wrapper dans les adapters</div>
+    <p>LLM_COST_LOG_PATH est une string dans config.py. L'adapter read_cost_log() l'enveloppe en <code>log_path = Path(LLM_COST_LOG_PATH)</code> au point d'usage. Démarcation claire config (plate) vs usage (objet).</p>
+  </div>
+
+  <div class="tip">
+    <div class="label">Tip. Donut SVG rotation -90°</div>
+    <p>Un cercle SVG commence son arc à 3h. <code>transform="rotate(-90 cx cy)"</code> sur le groupe le fait commencer à 12h, attendu visuel d'un camembert.</p>
+  </div>
+
+  <div class="tip">
+    <div class="label">Tip. Nouvel onglet avec cookie session</div>
+    <p><code>window.open(url, '_blank')</code> transmet automatiquement le même cookie session. Zéro travail d'auth à refaire entre dashboard direction et vue conseiller.</p>
+  </div>
+
+  <h3>Métriques</h3>
+  <ul>
+    <li>Latence serveur /dashboard/direction : <strong>~1 ms sur 1000 clients</strong></li>
+    <li>Zéro appel ML, zéro appel LLM</li>
+    <li>Taille des fichiers : index.html 7 KB, app.js 11 KB, routes.py +120 lignes</li>
+    <li>Donut SVG : 140×140 pixels, 4 cercles concentriques, zéro dépendance externe</li>
+  </ul>
+</section>
+
+<section class="doc-section" id="b8">
+  <h2>Brique 8. Monitoring Evidently + détection de dérive <span class="brique-status done">Livrée 22/10/2026</span></h2>
+
+  <h3>Objectif</h3>
+  <p>Mettre en place une détection automatique de dérive des données via Evidently. Le monitoring compare les features actuelles à une baseline d'entraînement, et alerte visuellement dans le dashboard direction. <strong>C'est la brique qui prépare le narratif de l'incident 2 pour le talk</strong> : la dérive sera visible dans le dashboard depuis plusieurs semaines, mais sans alerte proactive personne ne la verra avant que le modèle commence à sous-performer.</p>
+
+  <h3>Fichiers créés ou modifiés</h3>
+  <pre><code>requirements.txt            Ajout evidently==0.4.37
+app/config.py               CLIENTS_BASELINE_CSV + CLIENTS_CURRENT_CSV
+app/monitoring/drift.py     Réécriture complète : DataDriftPreset + cache mémoire
+app/core/schemas.py         Ajout DriftStats, DashboardKPI enrichi
+app/core/routes.py          Import Path, drift dans dashboard, 2 nouveaux endpoints
+app/main.py                 run_drift_report au boot (lifespan)
+static/direction/index.html CSS .drift-feature + .drift-features
+static/direction/app.js     renderDriftSection + binding bouton recompute
+data/evidently_reports/     Dossier auto-créé : latest.html + rapports historisés</code></pre>
+
+  <h3>Flux pas à pas : voir Étape D4 du parcours direction + Infra E</h3>
+
+  <h3>Les 7 décisions prises</h3>
+  <table>
+    <thead><tr><th>Décision</th><th>Choix</th><th>Raison</th></tr></thead>
+    <tbody>
+      <tr><td>Quand lancer la détection</td><td>Hybride : au boot + endpoint manuel</td><td>Résultat immédiat + flexibilité démo</td></tr>
+      <tr><td>Méthode statistique</td><td>DataDriftPreset Evidently</td><td>Standard, HTML beau out of the box</td></tr>
+      <tr><td>Seuil de détection</td><td>50% + liste features exposée</td><td>Comex voit "OK/Détecté", DSI voit la liste</td></tr>
+      <tr><td>Stockage rapport</td><td>latest.html + historique daté</td><td>Dashboard sur latest, brique 9 listera l'historique</td></tr>
+      <tr><td>Service</td><td>drift.py complété</td><td>Pattern cohérent avec llm_cost.py</td></tr>
+      <tr><td>UX dans le dashboard</td><td>Enrichir dashboard + lien rapport</td><td>Minimum viable, maximum visuel</td></tr>
+      <tr><td>Source données current</td><td>Fichier clients_current.csv fixe</td><td>Point d'injection incident 2 déjà prévu</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Structure de la réponse /dashboard/direction (bloc drift)</h3>
+  <pre><code>"drift": {
+  "drift_detected": true,
+  "nb_features_drifted": 3,
+  "nb_features_total": 6,
+  "drifted_features": [
+    "derniere_interaction_jours",
+    "nb_interactions_90j",
+    "solde_moyen"
+  ],
+  "share_drifted": 0.5,
+  "computed_at": "2026-10-22T13:00:34.464347",
+  "report_available": true
+}</code></pre>
+
+  <h3>Les 2 nouveaux endpoints</h3>
+  <ul>
+    <li><strong>POST /monitoring/drift/recompute</strong> (direction only) : force un recalcul Evidently complet, met à jour <code>_LAST_REPORT</code> en mémoire + régénère latest.html</li>
+    <li><strong>GET /monitoring/drift/report</strong> (direction only) : sert le HTML Evidently latest.html directement dans le navigateur via HTMLResponse</li>
+  </ul>
+
+  <h3>Pattern archi hexagonale</h3>
+  <p>La brique 8 est <strong>le troisième exemple hexagonal du projet</strong>, après l'adapter LLM (brique 1) et l'adapter log coût (brique 7). Elle complète la démonstration pour le talk :</p>
+  <ul>
+    <li><strong>Adapter technique</strong> <code>app/monitoring/drift.py</code> : contient tout le code Evidently. Signature <code>run_drift_report(reference_df=None, current_df=None)</code>. Si on remplace Evidently par Nannyml ou Alibi Detect demain, on change <strong>ce fichier et rien d'autre</strong>.</li>
+    <li><strong>Centre métier</strong> <code>app/core/routes.py</code> : consomme <code>run_drift_report()</code> et <code>get_last_drift_report()</code> comme boîtes noires. Ne connaît pas Evidently.</li>
+    <li><strong>Adapter présentation</strong> <code>static/direction/app.js</code> : <code>renderDriftSection()</code> affiche. Ne connaît pas l'adapter technique.</li>
+    <li><strong>Bonus production</strong> : le même adapter sert 2 formats de sortie (dict JSON synthétique pour le dashboard, HTML brut pour le rapport détaillé). <strong>Un adapter, deux consommateurs, zéro duplication.</strong></li>
+  </ul>
+
+  <h3>Résultat observé</h3>
+  <p>Sur les 6 features numériques testées, <strong>3 ont dérivé</strong> :</p>
+  <ul>
+    <li><strong>solde_moyen</strong> : les clients actuels ont des soldes significativement plus faibles</li>
+    <li><strong>nb_interactions_90j</strong> : moins d'interactions récentes en moyenne</li>
+    <li><strong>derniere_interaction_jours</strong> : l'écart depuis la dernière interaction s'est allongé</li>
+  </ul>
+  <p><strong>Interprétation métier</strong> : les clients deviennent moins actifs et moins engagés. Signal fort de churn à venir. Le modèle, entraîné sur une baseline où les clients étaient plus actifs, va avoir tendance à sous-estimer le risque de churn sur ces nouveaux profils.</p>
+
+  <h3>Narratif pour le talk 1er décembre</h3>
+  <p>Le dashboard affiche "DÉTECTÉE" <strong>dès aujourd'hui</strong>, pas semaine 4. Pourquoi ? Parce que les 2 CSV baseline et current sont déjà différents. <strong>Mais le modèle, lui, tourne sur les features de baseline</strong>. Donc la dérive est signalée, mais pas encore impactante.</p>
+  <p><strong>Semaine 4, l'incident 2 déclenche</strong> : scripts/init_db.py est modifié pour charger clients_current.csv. À ce moment-là : le modèle commence à prédire sur des données qui ont dérivé depuis 3 semaines, les scores de churn deviennent incohérents (sous-estimés), les clients à risque réel ne sont plus détectés, les conseillers appellent les mauvais clients.</p>
+  <p><strong>Diagnostic post-mortem</strong> : "le monitoring avait raison depuis 3 semaines, personne ne regardait le dashboard". C'est l'histoire de 80% des incidents MLOps en entreprise.</p>
+
+  <div class="tip">
+    <div class="label">Tip. Cache mémoire via singleton module-level</div>
+    <p><code>_LAST_REPORT: Optional[dict] = None</code> au top-level de drift.py + <code>get_last_drift_report()</code> qui le retourne. Pattern lightweight, zéro dépendance, parfait pour un cache "dernier résultat connu".</p>
+  </div>
+
+  <div class="tip">
+    <div class="label">Tip. Signature flexible avec None par défaut</div>
+    <p><code>run_drift_report(reference_df=None, current_df=None)</code>. Si rien n'est passé, charge les 2 CSV. Permet aux tests unitaires de passer des DataFrames custom tout en gardant un appel ultra-simple en prod.</p>
+  </div>
+
+  <div class="tip">
+    <div class="label">Tip. Rapport HTML dual : historisé + latest</div>
+    <p>Chaque run écrit 2 fichiers : <code>drift_&lt;ts&gt;.html</code> pour l'historique + <code>latest.html</code> pour l'accès rapide. Dashboard pointe sur latest.</p>
+  </div>
+
+  <div class="tip">
+    <div class="label">Tip. HTMLResponse de FastAPI pour servir du HTML brut</div>
+    <p>Au lieu de retourner un JSON ou de rediriger, <code>HTMLResponse(content=html, status_code=200)</code> sert le contenu directement. Parfait pour les rapports générés.</p>
+  </div>
+
+  <div class="piege">
+    <div class="label">Piège. Oublier from pathlib import Path en top-level</div>
+    <p>Si Path est utilisé dans un endpoint sans import explicite, NameError au premier appel. Vérifier à l'import : <code>python -c "from app.core.routes import router"</code>.</p>
+  </div>
+
+  <div class="piege">
+    <div class="label">Piège. Evidently v0.4 vs v0.5 : API différente</div>
+    <p>En v0.4, <code>from evidently.report import Report</code>. En v0.5+, <code>from evidently import Report</code>. Figer la version dans requirements.txt (<code>evidently==0.4.37</code>).</p>
+  </div>
+
+  <h3>Métriques</h3>
+  <ul>
+    <li>Latence calcul initial Evidently au boot : <strong>~500 ms sur 1000 lignes</strong></li>
+    <li>Latence GET /dashboard/direction (lecture cache) : <strong>~1 ms</strong></li>
+    <li>Latence POST /monitoring/drift/recompute : <strong>~500 ms</strong> (recalcul complet)</li>
+    <li>Taille rapport HTML Evidently : ~1.5 MB</li>
+    <li>3/6 features détectées comme dérivées (seuil 50% atteint pile)</li>
+  </ul>
+</section>
+
+<!-- ============== RÉFÉRENCES ============== -->
+
+<section class="doc-section" id="metriques">
+  <h2>Métriques consolidées</h2>
+
+  <h3>Validation RBAC (brique 5)</h3>
+  <table>
+    <thead><tr><th>Rôle</th><th>Clients visibles</th><th>Régions</th></tr></thead>
+    <tbody>
+      <tr><td>conseiller_lille</td><td>489</td><td>{lille}</td></tr>
+      <tr><td>conseiller_marseille</td><td>511</td><td>{marseille}</td></tr>
+      <tr><td>direction</td><td>1000</td><td>{lille, marseille}</td></tr>
+    </tbody>
+  </table>
+  <p><strong>489 + 511 = 1000</strong>. Aucun client oublié ni doublé.</p>
+
+  <h3>Coûts LLM (session 20/10/2026)</h3>
+  <table>
+    <thead><tr><th>Appel</th><th>Modèle</th><th>Tokens</th><th>Coût</th><th>Latence</th></tr></thead>
+    <tbody>
+      <tr><td>B1 test</td><td>Llama 70B</td><td>68+54</td><td>0.000037 USD</td><td>594 ms</td></tr>
+      <tr><td>B2 Marie MISS</td><td>Llama 70B</td><td>329+124</td><td>0.000125 USD</td><td>2922 ms</td></tr>
+      <tr><td>B2 Karim MISS</td><td>Llama 70B</td><td>264+146</td><td>0.000119 USD</td><td>6890 ms</td></tr>
+      <tr><td><strong>TOTAL</strong></td><td></td><td><strong>661+324</strong></td><td><strong>0.000281 USD</strong></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Gains du cache (projection business)</h3>
+  <table>
+    <thead><tr><th>Scénario</th><th>Appels/mois</th><th>Coût/mois</th></tr></thead>
+    <tbody>
+      <tr><td>Sans cache</td><td>40 000</td><td>~5.00 USD</td></tr>
+      <tr><td>Avec cache 93%</td><td>2 800</td><td>~0.36 USD</td></tr>
+      <tr><td><strong>Gain</strong></td><td>/14</td><td>-93%</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="doc-section" id="glossaire">
+  <h2>Glossaire technique</h2>
+  <ul>
+    <li><strong>AUC-ROC</strong> : capacité à distinguer 2 classes. &gt; 0.9 excellent.</li>
+    <li><strong>bcrypt</strong> : hash volontairement lent (~100 ms). Standard depuis 1999.</li>
+    <li><strong>Cache LRU</strong> : quand plein, vire l'entrée pas utilisée depuis le plus longtemps.</li>
+    <li><strong>Dependency Injection</strong> : FastAPI injecte via <code>Depends()</code>.</li>
+    <li><strong>Lazy loading</strong> : calculer à la demande. Opposé du pré-scoring.</li>
+    <li><strong>Pré-scoring</strong> : calculer tous les scores au démarrage. Boot plus lent, requêtes rapides.</li>
+    <li><strong>RBAC</strong> : Role-Based Access Control.</li>
+    <li><strong>SessionMiddleware</strong> : middleware Starlette pour cookies session signés.</li>
+    <li><strong>SHAP</strong> : méthode mathématique pour attribuer à chaque feature sa contribution. <strong>Pas un modèle ML.</strong></li>
+    <li><strong>Singleton</strong> : une seule instance partagée.</li>
+    <li><strong>Timing attack</strong> : attaque exploitant les temps de réponse.</li>
+    <li><strong>TreeExplainer</strong> : SHAP optimisé pour modèles arbres. 1000x plus rapide.</li>
+    <li><strong>TTL</strong> : durée de vie d'une entrée en cache.</li>
+    <li><strong>XGBoost</strong> : algorithme d'arbres gradient-boosted. Standard tabulaire.</li>
+  </ul>
+</section>
+
+<section class="doc-section" id="pieges">
+  <h2>Journal des pièges évités</h2>
+
+  <div class="piege">
+    <div class="label">Piège n°1. Python 3.14 trop récent pour la stack ML</div>
+    <p><strong>Solution</strong> : Python 3.11 via <code>py -3.11 -m venv venv</code>. <strong>Leçon</strong> : rester sur 3.11 ou 3.12 pour tout projet ML en 2026.</p>
+  </div>
+
+  <div class="piege">
+    <div class="label">Piège n°2. pricing.py manquant</div>
+    <p><code>ls -la app/llm/</code> avant tout test.</p>
+  </div>
+
+  <div class="piege">
+    <div class="label">Piège n°3. Dataset déséquilibré</div>
+    <p>Rééquilibrer + <code>scale_pos_weight</code>. Viser 15-35% churners.</p>
+  </div>
+
+  <div class="piege">
+    <div class="label">Piège n°4. ModuleNotFoundError sur scripts</div>
+    <p><code>sys.path.insert(...)</code> OU <code>python -m scripts.x</code>.</p>
+  </div>
+
+  <div class="piege">
+    <div class="label">Piège n°5. Dataset non régénéré</div>
+    <p>Commande combinée systématique après modification.</p>
+  </div>
+
+  <div class="piege">
+    <div class="label">Piège n°6. Heredoc Bash corrompu</div>
+    <p><code>ls -la</code> + <code>python -c</code> après chaque gros heredoc.</p>
+  </div>
+
+  <div class="piege">
+    <div class="label">Piège n°7. Scaffolding avec commentaires INCIDENT</div>
+    <p>Décider A ou B <strong>avant</strong> le scaffolding.</p>
+  </div>
+
+  <div class="piege">
+    <div class="label">Piège n°8. Hash bcrypt en str au lieu de bytes</div>
+    <p>Toujours <code>b'$2b$12$...'</code>.</p>
+  </div>
+
+  <div class="piege">
+    <div class="label">Piège n°9. me.nom_affiche inexistant</div>
+    <p>Vérifier la cohérence des noms de champs backend/front.</p>
+  </div>
+
+  <div class="piege">
+    <div class="label">Piège n°10. Scaffolding attend des champs futurs</div>
+    <p>Placeholder sobre tant que l'endpoint n'existe pas, enrichissement quand la brique arrive.</p>
+  </div>
+
+  <div class="piege">
+    <div class="label">Piège n°11. Venv perdu après pause</div>
+    <p><code>ModuleNotFoundError</code> alors que tout marchait. Cause : Git Bash a repris Python 3.13 système. <strong>Solution : <code>source venv/Scripts/activate</code> systématique.</strong></p>
+  </div>
+
+  <div class="piege">
+    <div class="label">Piège n°12. Hard reload nécessaire après refonte front</div>
+    <p><code>Uncaught TypeError: Cannot read properties of null</code> sur <code>getElementById</code>. Cause : navigateur sert l'ancien HTML. <strong>Solution : Ctrl + Shift + R systématique. F12 + "Disable cache" coché pendant toute la session.</strong></p>
+  </div>
+
+  <div class="piege">
+    <div class="label">Piège n°13. Heredoc Bash tronqué sur Git Bash Windows</div>
+    <p><code>cat > fichier.js &lt;&lt; 'EOF'</code> écrit un fichier incomplet, sans erreur visible. <strong>Cause</strong> : template literals JS <code>${...}</code> perturbent le parsing du heredoc Bash. <strong>Solution</strong> : pour tout fichier front &gt; 100 lignes avec interpolations, passer par <code>python &lt;&lt; 'PYEOF'</code> avec <code>Path.write_text()</code>. Python gère le texte comme un bloc atomique, Bash ne voit qu'une commande simple.</p>
+  </div>
+
+  <div class="piege">
+    <div class="label">Piège n°14. Cache navigateur persistant malgré Ctrl+Shift+R</div>
+    <p>La console affiche une erreur qui pointe sur une ligne de code qui n'existe plus dans le fichier à jour sur disque. <strong>Cause</strong> : le navigateur garde l'ancien JS en cache plus agressivement que prévu. <strong>Solution 3 niveaux</strong> : (1) Ctrl+Shift+R, (2) F12 + Network + "Disable cache" cochée, (3) <strong>fenêtre privée Ctrl+Shift+N</strong> qui garantit zéro cache possible. La fenêtre privée est le test imparable.</p>
+  </div>
+</section>
+
+<footer>
+  Dernière mise à jour : 22 octobre 2026, après la brique 8 (monitoring Evidently + détection de dérive). Prochaine mise à jour à la livraison de la brique 9 (scheduler APScheduler + SQLite historisation).
+</footer>
+
 </div>
 
-<script>
-const sections = [
-  // ===== JOUR 1 =====
-  {
-    day: 1,
-    title: "Choisir & cadrer mon projet",
-    time: "1h · 10h — 11h",
-    intro: "Avant de coder, je décide. Quelle typologie de site, pour qui, avec quel message. Un brief écrit court mais clair, c'est ce qui guide tout le reste.",
-    items: [
-      { text: "Choisir une typologie : site perso / événementiel / manifeste" },
-      { text: "Définir le public cible en une phrase", tip: "Ex : « Les recruteurs en communication qui consultent mon profil »" },
-      { text: "Écrire le message principal en une phrase", tip: "Si on retient une seule chose en quittant le site, c'est quoi ?" },
-      { text: "Définir le ton : sérieux, fun, premium, militant, intime…" },
-      { text: "Définir l'action attendue du visiteur", tip: "Me contacter ? Acheter un billet ? Partager ?" },
-    ]
-  },
-  {
-    day: 1,
-    title: "Contenu & moodboard",
-    time: "1h30 · 11h — 12h30",
-    intro: "Le piège classique : commencer à coder avec un Lorem Ipsum « pour voir ». On rédige d'abord. On collecte les images. On rassemble les références. Coder du vide, c'est perdre du temps.",
-    items: [
-      { text: "Rédiger le titre principal du site (le hero)" },
-      { text: "Rédiger l'accroche / sous-titre (1-2 phrases)" },
-      { text: "Rédiger le contenu de chaque section de la page d'accueil" },
-      { text: "Rédiger le contenu complet de la page secondaire" },
-      { text: "Collecter et trier 3 à 5 images en qualité correcte", tip: "Sources libres recommandées : Unsplash, Pexels, mes propres photos" },
-      { text: "Constituer un moodboard de 3 à 5 références visuelles", tip: "Sites que tu trouves beaux, qui correspondent à ton ton" },
-      { text: "Choisir une palette de 3 à 4 couleurs", tip: "1 dominante, 1 accent, 1 fond, 1 texte" },
-      { text: "Choisir une typographie pour les titres et une pour les textes", tip: "Google Fonts, ou polices système si tu veux la jouer minimaliste" },
-    ]
-  },
-  {
-    day: 1,
-    title: "Wireframe papier",
-    time: "1h · 13h30 — 14h30",
-    intro: "Pas de Figma. Une feuille A4, un crayon, 5 minutes par page. Tu dessines les zones, pas les détails. Cette étape clarifie ta tête plus vite que n'importe quel outil.",
-    items: [
-      { text: "Dessiner le wireframe de la page d'accueil sur papier" },
-      { text: "Identifier les grandes zones : header, hero, sections, footer" },
-      { text: "Décider de l'ordre des sections sur l'accueil" },
-      { text: "Dessiner le wireframe de la page secondaire sur papier" },
-      { text: "Photographier ou scanner les croquis (utile pour s'y référer)" },
-    ]
-  },
-  {
-    day: 1,
-    title: "Structure HTML des 2 pages",
-    time: "1h30 · 14h30 — 16h",
-    intro: "Maintenant on code, mais sans CSS. La règle d'or : une page doit déjà être lisible et hiérarchisée même sans aucun style. Si c'est le cas, ta structure est bonne.",
-    items: [
-      { text: "Ouvrir le starter kit dans VS Code" },
-      { text: "Renseigner le <title> et la <meta name='description'> dans chaque page" },
-      { text: "Structurer la page d'accueil avec les balises sémantiques", tip: "header, main, section, article, footer" },
-      { text: "Remplir la page d'accueil avec tes vrais textes (pas de Lorem)" },
-      { text: "Structurer la page secondaire de la même façon" },
-      { text: "Remplir la page secondaire avec tes vrais textes" },
-      { text: "Vérifier la hiérarchie des titres : un seul h1 par page, puis h2, h3" },
-      { text: "Créer les liens de navigation entre les 2 pages" },
-      { text: "Ajouter les images avec attribut alt descriptif" },
-      { text: "Tester chaque page dans le navigateur sans CSS — est-ce lisible ?" },
-    ]
-  },
-  {
-    day: 1,
-    title: "CSS de base",
-    time: "1h · 16h — 17h",
-    intro: "On pose la fondation. Pas de fioritures, pas de hover sophistiqué. Couleurs, typo, espacements généraux. La maison doit tenir debout avant qu'on choisisse la déco.",
-    items: [
-      { text: "Lier le fichier style.css dans le <head> des 2 pages" },
-      { text: "Appliquer un reset CSS de base (marges, paddings, box-sizing)" },
-      { text: "Importer la / les typographie(s) choisie(s)" },
-      { text: "Définir la couleur de fond et la couleur de texte par défaut" },
-      { text: "Définir la taille de police de base (16px ou 1rem)" },
-      { text: "Styler la hiérarchie des titres (h1, h2, h3)" },
-      { text: "Définir une largeur max pour le contenu et le centrer" },
-      { text: "Styler les liens (couleur, suppression du soulignement si voulu)" },
-      { text: "Tester dans le navigateur — la base doit déjà avoir une identité" },
-    ]
-  },
-  // ===== JOUR 2 =====
-  {
-    day: 2,
-    title: "Mise en forme avancée",
-    time: "1h30 · 9h30 — 11h",
-    intro: "Le passage du « ça marche » au « ça donne envie ». On soigne le hero, on travaille la hiérarchie visuelle, on aère. Les espaces blancs valent autant que les éléments remplis.",
-    items: [
-      { text: "Soigner le hero de l'accueil : taille du titre, espace, accroche visible" },
-      { text: "Styler chaque section : padding vertical généreux, séparations claires" },
-      { text: "Styler les cartes / blocs de contenu (border, padding, ombre légère)" },
-      { text: "Styler les boutons : padding, border-radius, couleurs cohérentes" },
-      { text: "Ajouter un effet :hover sur les liens et boutons" },
-      { text: "Styler le header / la navigation" },
-      { text: "Styler le footer" },
-      { text: "Styler la page secondaire pour qu'elle soit visuellement cohérente" },
-      { text: "Vérifier la cohérence : un seul style de bouton partout, mêmes espacements" },
-    ]
-  },
-  {
-    day: 2,
-    title: "Responsive · adapter au mobile",
-    time: "1h30 · 11h — 12h30",
-    intro: "Une seule media query suffit. On bascule sur mobile, on regarde ce qui casse, on corrige. Pas besoin de 5 breakpoints pour ce projet.",
-    items: [
-      { text: "Ouvrir le mode responsive du navigateur (F12 puis icône mobile)" },
-      { text: "Identifier les éléments qui débordent ou se chevauchent sur petit écran" },
-      { text: "Ajouter une media query pour les écrans < 768px" },
-      { text: "Adapter la taille des titres pour qu'ils tiennent sur une ligne" },
-      { text: "Adapter la navigation pour mobile (menu burger ou stack vertical)" },
-      { text: "Vérifier que les images ne débordent jamais (max-width: 100%)" },
-      { text: "Vérifier les paddings sur mobile (ne pas coller au bord)" },
-      { text: "Tester sur plusieurs tailles : 375px, 768px, 1024px, 1440px" },
-    ]
-  },
-  {
-    day: 2,
-    title: "Touche JS · une interaction",
-    time: "1h · 13h30 — 14h30",
-    intro: "Une seule interaction, bien faite. Le snippet existe — ton job c'est de le lire, le comprendre, l'adapter. C'est la différence entre copier-coller et copier-comprendre.",
-    items: [
-      { text: "Choisir UNE interaction : menu burger / smooth scroll / dark mode / animation au scroll" },
-      { text: "Lire le snippet correspondant dans le guide de référence" },
-      { text: "L'intégrer à ta page (dans un <script> en bas de body)" },
-      { text: "L'adapter à TES classes / TES IDs (ne pas garder les noms du snippet)" },
-      { text: "Tester que ça marche sur les 2 pages" },
-      { text: "Vérifier qu'il n'y a aucune erreur dans la console (F12)" },
-    ]
-  },
-  {
-    day: 2,
-    title: "Polish & accessibilité",
-    time: "1h · 14h30 — 15h30",
-    intro: "L'étape qui sépare un site d'étudiant d'un site qu'on partage sans complexe sur LinkedIn. Aucune de ces tâches n'est compliquée, toutes comptent.",
-    items: [
-      { text: "Vérifier que chaque <img> a un alt descriptif et utile" },
-      { text: "Vérifier la hiérarchie des titres : un seul h1 par page, pas de saut" },
-      { text: "Vérifier les contrastes de couleurs", tip: "Outil : WebAIM Contrast Checker — minimum 4.5:1 pour les textes" },
-      { text: "Ajouter un favicon", tip: "Outil : favicon.io pour le générer rapidement" },
-      { text: "Rédiger une meta description correcte sur chaque page (max 160 caractères)" },
-      { text: "Vérifier le <title> de chaque page (visible dans l'onglet du navigateur)" },
-      { text: "Tester la navigation au clavier (Tab, Entrée)" },
-      { text: "Relire tous les textes — fautes, coquilles, ponctuation" },
-      { text: "Renommer les fichiers proprement (pas d'espaces, pas d'accents)" },
-    ]
-  },
-  {
-    day: 2,
-    title: "Mise en ligne & restitution",
-    time: "1h30 · 15h30 — 17h",
-    intro: "Le moment où ton site devient vraiment un site. Une URL réelle, un lien partageable. Puis tu présentes au groupe — pas juste tu montres, tu pitches.",
-    items: [
-      { text: "Vérifier que tous les fichiers sont bien dans un seul dossier" },
-      { text: "Choisir une méthode d'hébergement : Netlify Drop OU GitHub Pages" },
-      { text: "Glisser-déposer le dossier sur Netlify Drop (le plus rapide)", tip: "Ou bien : créer un repo GitHub, push, activer Pages" },
-      { text: "Vérifier que le site fonctionne bien sur l'URL en ligne" },
-      { text: "Vérifier que les images et liens internes marchent en ligne" },
-      { text: "Copier l'URL et la noter quelque part de sûr" },
-      { text: "Préparer un pitch de 2 minutes : typologie, choix, ce dont je suis fier" },
-      { text: "Présenter mon site au groupe" },
-      { text: "Partager l'URL avec le formateur" },
-    ]
-  },
-];
-
-// ===== State =====
-const STORAGE_KEY = 'atelier_carnet_v1';
-const NAME_KEY = 'atelier_carnet_name';
-let checks = {};
-let openSections = new Set();
-let openIntros = new Set();
-try { checks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) {}
-
-function save() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(checks)); } catch(e) {}
-}
-
-function updateProgress() {
-  let total = 0, done = 0;
-  sections.forEach((s, si) => s.items.forEach((_, ii) => {
-    total++;
-    if (checks[si + '-' + ii]) done++;
-  }));
-  document.getElementById('prog-label').textContent = done + ' / ' + total + ' tâches complétées';
-  document.getElementById('prog-fill').style.width = (total ? Math.round(done / total * 100) : 0) + '%';
-  document.getElementById('celebrate').classList.toggle('show', total > 0 && done === total);
-}
-
-function updateSectionVisual(sectionEl, si) {
-  const sec = sections[si];
-  const done = sec.items.filter((_, ii) => checks[si + '-' + ii]).length;
-  const total = sec.items.length;
-  sectionEl.querySelector('.section-count').textContent = done + '/' + total;
-  sectionEl.classList.toggle('completed', done === total);
-}
-
-function resetAll() {
-  if (!confirm('Remettre toutes les cases à zéro ? Cette action est irréversible.')) return;
-  checks = {};
-  document.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);
-  document.querySelectorAll('.item-text').forEach(t => t.classList.remove('done'));
-  document.querySelectorAll('.section').forEach((el, i) => updateSectionVisual(el, i));
-  save();
-  updateProgress();
-}
-
-// ===== Name persistence =====
-const nameInput = document.getElementById('student-name');
-nameInput.value = localStorage.getItem(NAME_KEY) || '';
-nameInput.addEventListener('input', () => {
-  try { localStorage.setItem(NAME_KEY, nameInput.value); } catch(e) {}
-});
-
-// ===== Render =====
-const container = document.getElementById('sections');
-
-// Day 1 divider
-const day1Div = document.createElement('div');
-day1Div.className = 'day-divider';
-day1Div.innerHTML = `
-  <span class="day-label">Jour 1</span>
-  <span class="day-sub">Penser & Structurer</span>
-  <span class="line-fill"></span>
-`;
-container.appendChild(day1Div);
-
-let lastDay = 1;
-
-sections.forEach((sec, si) => {
-  if (sec.day !== lastDay) {
-    const dayDiv = document.createElement('div');
-    dayDiv.className = 'day-divider';
-    dayDiv.innerHTML = `
-      <span class="day-label">Jour ${sec.day}</span>
-      <span class="day-sub">Styliser & Publier</span>
-      <span class="line-fill"></span>
-    `;
-    container.appendChild(dayDiv);
-    lastDay = sec.day;
-  }
-
-  const wrapper = document.createElement('div');
-  wrapper.className = 'section';
-
-  const doneInSec = sec.items.filter((_, ii) => checks[si + '-' + ii]).length;
-  if (doneInSec === sec.items.length) wrapper.classList.add('completed');
-
-  const header = document.createElement('div');
-  header.className = 'section-header';
-  header.innerHTML = `
-    <span class="section-num">${si + 1}</span>
-    <span class="section-title">${sec.title}</span>
-    <span class="section-time">${sec.time}</span>
-    <span class="section-count">${doneInSec}/${sec.items.length}</span>
-    <span class="chevron">▶</span>
-  `;
-
-  const intro = document.createElement('div');
-  intro.className = 'section-intro';
-  intro.textContent = sec.intro;
-
-  const itemsDiv = document.createElement('div');
-  itemsDiv.className = 'items';
-
-  sec.items.forEach((item, ii) => {
-    const key = si + '-' + ii;
-    const row = document.createElement('div');
-    row.className = 'item';
-
-    const lbl = document.createElement('label');
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.checked = !!checks[key];
-
-    const textWrap = document.createElement('div');
-    const span = document.createElement('span');
-    span.className = 'item-text' + (cb.checked ? ' done' : '');
-    span.textContent = item.text;
-    textWrap.appendChild(span);
-
-    if (item.tip) {
-      const tip = document.createElement('span');
-      tip.className = 'item-tip';
-      tip.textContent = item.tip;
-      textWrap.appendChild(tip);
-    }
-
-    cb.addEventListener('change', () => {
-      checks[key] = cb.checked;
-      span.classList.toggle('done', cb.checked);
-      save();
-      updateProgress();
-      updateSectionVisual(wrapper, si);
-    });
-
-    lbl.appendChild(cb);
-    lbl.appendChild(textWrap);
-    row.appendChild(lbl);
-    itemsDiv.appendChild(row);
-  });
-
-  header.addEventListener('click', () => {
-    const isOpen = itemsDiv.classList.toggle('open');
-    intro.classList.toggle('open', isOpen);
-    header.querySelector('.chevron').classList.toggle('open', isOpen);
-    wrapper.classList.toggle('has-open', isOpen);
-  });
-
-  wrapper.appendChild(header);
-  wrapper.appendChild(intro);
-  wrapper.appendChild(itemsDiv);
-  container.appendChild(wrapper);
-});
-
-updateProgress();
-</script>
 </body>
 </html>

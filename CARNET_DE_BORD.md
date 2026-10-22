@@ -8,7 +8,7 @@
 > Projet : Tempo Client V2, pack pédagogique Devoteam MSc1
 > Démarrage : octobre 2026
 > Objectif : démo Sloan Charrier dans 4 semaines, talk 1er décembre 2026
-> État : 10/13 briques livrées, dashboard direction V2 UX premium opérationnel
+> État : 11/13 briques livrées, monitoring Evidently opérationnel, dérive détectée visible dans le dashboard
 
 ---
 
@@ -31,12 +31,14 @@
 - Étape D1. Je me connecte en tant que direction (Brique 4 + 7)
 - Étape D2. Je consulte le dashboard business + ML Ops (Brique 7)
 - Étape D3. Je bascule vers la vue conseiller (Brique 7 + 5)
+- Étape D4. Je consulte la dérive et ouvre le rapport Evidently (Brique 8)
 
 ### Infrastructure sous-jacente
 - Infra A. Au boot du serveur (Brique 3 ML + Brique 10a pré-scoring)
 - Infra B. Chaque appel LLM (Briques 1 + 2)
 - Infra C. Chaque requête RBAC (Brique 5)
 - Infra D. Vue agrégée direction, pattern lecture pure (Brique 7)
+- Infra E. Monitoring Evidently, adapter branché à chaud (Brique 8)
 
 ### Briques construites (ordre numérique)
 - Brique 1. LLMProvider + OpenRouter (livrée)
@@ -49,7 +51,7 @@
 - Brique 10b. Endpoint /explain + cache LLM + audit RGPD (livrée)
 - Brique 10c. Endpoint /recommend + règles métier + audit (livrée)
 - Brique 7. Dashboard direction V2 UX premium (livrée)
-- Brique 8. Monitoring Evidently (à venir)
+- Brique 8. Monitoring Evidently + détection de dérive (livrée) (à venir)
 - Brique 9. Scheduler APScheduler (à venir)
 - Brique 11. Injection des incidents (semaine 4)
 
@@ -502,6 +504,53 @@ Même produit, deux rôles, zéro code dupliqué côté front.
 
 ---
 
+## Étape D4. Je consulte la dérive et ouvre le rapport Evidently
+
+### Scénario : Claire voit la section "Dérive des données" sur son dashboard
+
+### Flux pas à pas
+
+1. Dans le dashboard direction, en-dessous de ML Ops, apparaît la section "Dérive des données (Evidently)"
+2. Visuellement, Claire voit :
+   → Un gros label "DÉTECTÉE" en rouge
+   → Le ratio "3/6 features dérivées (50%)"
+   → Trois badges rouges listant les features qui ont dérivé : solde_moyen, nb_interactions_90j, derniere_interaction_jours
+   → La date du dernier calcul
+3. En haut à droite de la section, deux boutons :
+   → "Voir le rapport Evidently" : ouvre un nouvel onglet
+   → "Vérifier maintenant" : force un recalcul
+4. Claire clique sur "Voir le rapport Evidently"
+   → Le navigateur ouvre GET /monitoring/drift/report dans un nouvel onglet
+   → L'endpoint lit le fichier data/evidently_reports/latest.html
+   → Renvoie le HTML brut avec HTMLResponse
+5. Le navigateur rend la page Evidently :
+   → Titre "Data Drift Report"
+   → Tableau résumé : chaque feature avec son statut dérivé / non dérivé
+   → Pour chaque feature dérivée : graphique de distribution baseline (bleu) vs current (rouge)
+   → Métriques statistiques (Wasserstein distance, p-value, etc.)
+6. Claire voit visuellement que les distributions ont bougé
+   → solde_moyen : queue à droite dégarnie, mode décalé vers le bas
+   → nb_interactions_90j : courbe aplatie, moins de pics
+   → derniere_interaction_jours : queue à droite étalée
+7. Elle revient sur le dashboard, clique sur "Vérifier maintenant"
+   → Le bouton devient "Calcul en cours..."
+   → POST /monitoring/drift/recompute force run_drift_report()
+   → Evidently recalcule, nouveau rapport historisé + latest.html régénéré
+   → Le dashboard se rafraîchit avec les nouvelles valeurs (identiques si rien n'a changé)
+     ↓
+Claire a maintenant une vue complète : le monitoring technique montre que les données qui alimentent le modèle ne ressemblent plus à celles sur lesquelles il a été entraîné. Le modèle continue de prédire, mais ses prédictions deviennent de moins en moins fiables.
+
+### Détails techniques clés
+
+- **Rapport Evidently généré au boot** et mis en cache mémoire via `_LAST_REPORT`
+- **Dashboard lit le cache** : zéro recalcul à chaque GET /dashboard/direction
+- **Recalcul manuel disponible** via le bouton (bascule le cache)
+- **Rapport HTML historisé** : chaque run crée un fichier daté + met à jour latest.html
+- **Protection direction only** : les 2 endpoints exigent `require_direction`
+- **Pattern narratif** : le monitoring voit la dérive, mais si personne ne regarde le dashboard, l'incident se prépare en silence
+
+---
+
 # INFRASTRUCTURE SOUS-JACENTE
 
 Cette section décrit ce qui tient le produit en coulisses. L'utilisateur ne
@@ -666,6 +715,48 @@ zéro appel réseau. Juste de la composition de données déjà payées au boot.
 - **Changement de stockage transparent** : passer de JSONL à Postgres ne change que `read_cost_log()`, pas routes.py
 - **Scalabilité limitée mais claire** : si le portefeuille passe à 1M clients, `get_all_scores()` ne tient plus en mémoire → c'est à ce moment-là qu'on introduit une base, pas avant
 - **Trade-off assumé** : simplicité maintenant, migration en 2027 si besoin
+
+---
+
+## Infra E. Monitoring Evidently, adapter branché à chaud
+
+### Scénario : la dérive des données est calculée et exposée
+
+### Flux pas à pas
+
+1. Au boot du serveur, le lifespan appelle `run_drift_report()`
+   → Lit `clients_baseline.csv` (snapshot d'entraînement, 1000 lignes)
+   → Lit `clients_current.csv` (données actuelles simulées, 1000 lignes)
+   → Garde seulement 6 features numériques (exclut id, nom, prénom, région, canal, churn)
+2. Evidently construit un `Report(metrics=[DataDriftPreset()])`
+   → Pour chaque feature, applique un test statistique adapté
+   → Wasserstein distance pour les features avec distribution continue
+   → Chi² pour les catégorielles (si présentes)
+   → Compare les distributions baseline vs current
+3. Evidently détermine le verdict global :
+   → Si plus de 50% des features ont dérivé → `dataset_drift = True`
+   → Sinon → `dataset_drift = False`
+4. Le résultat est extrait sous forme de dict :
+   → `drift_detected`, `nb_features_drifted`, `nb_features_total`
+   → `drifted_features` : liste des noms de features dérivées
+   → `share_drifted` : ratio entre 0.0 et 1.0
+   → `computed_at` : timestamp ISO
+5. Deux fichiers HTML sont écrits sur disque :
+   → `data/evidently_reports/drift_<timestamp>.html` : rapport historisé
+   → `data/evidently_reports/latest.html` : rapport courant
+6. Le dict de synthèse est mis en cache mémoire via `_LAST_REPORT`
+7. Chaque GET /dashboard/direction lit ce cache (instantané)
+8. Chaque POST /monitoring/drift/recompute refait le cycle complet (quelques centaines de ms)
+     ↓
+Le monitoring est en place. Il tourne automatiquement au boot et à la demande. Les 3 features dérivées (solde_moyen, nb_interactions_90j, derniere_interaction_jours) sont visibles dès le premier chargement du dashboard. Le rapport HTML complet est consultable en 1 clic.
+
+### Détails techniques clés
+
+- **Adapter hexagonal pur** : `drift.py` ne connaît ni le dashboard ni les endpoints
+- **Changement d'outil = 1 fichier** : si on remplace Evidently par Nannyml ou Alibi Detect, on change uniquement `drift.py`
+- **Deux usages d'une même source** : la synthèse JSON (pour le dashboard) et le HTML brut (pour le rapport détaillé)
+- **Cache mémoire optimiste** : zéro recalcul par requête, re-exécution explicite
+- **Point d'injection incident 2** : `scripts/init_db.py` qui charge actuellement baseline → changement vers current déclenchera la dérive dans le modèle réel
 
 ---
 
@@ -1475,13 +1566,128 @@ Les deux ont été nettoyés en même temps que la brique 7. Un `grep -rn "INCID
 
 ---
 
-## Brique 8. Monitoring Evidently
+## Brique 8. Monitoring Evidently + détection de dérive
 
-Statut : à construire.
+Statut : livrée et validée en local, 22 octobre 2026.
 
-Objectif prévu : comparaison baseline vs current via Evidently. Révèle l'incident 2 préparé en brique 3.
+### Objectif
+
+Mettre en place une détection automatique de dérive des données via Evidently.
+Le monitoring compare les features actuelles à une baseline d'entraînement, et
+alerte visuellement dans le dashboard direction si les distributions ont trop
+bougé. **C'est la brique qui prépare le narratif de l'incident 2 pour le talk** :
+la dérive sera visible dans le dashboard depuis plusieurs semaines, mais sans
+alerte proactive personne ne la verra avant que le modèle commence à sous-performer.
+
+### Fichiers créés ou modifiés
+
+```
+requirements.txt            Ajout evidently==0.4.37
+app/config.py               CLIENTS_BASELINE_CSV + CLIENTS_CURRENT_CSV
+app/monitoring/drift.py     Réécriture complète : DataDriftPreset + cache mémoire
+app/core/schemas.py         Ajout DriftStats, DashboardKPI enrichi
+app/core/routes.py          Import Path, drift dans dashboard, 2 nouveaux endpoints
+app/main.py                 run_drift_report au boot (lifespan)
+static/direction/index.html CSS .drift-feature + .drift-features
+static/direction/app.js     renderDriftSection + binding bouton recompute
+data/evidently_reports/     Dossier auto-créé : latest.html + rapports historisés
+```
+
+### Flux pas à pas : voir Étape D4 du parcours direction + Infra E
+
+### Les 7 décisions prises
+
+| Décision | Choix | Raison |
+|---|---|---|
+| Quand lancer la détection | Hybride : au boot + endpoint recalcul manuel | Résultat immédiat au premier appel + flexibilité démo |
+| Méthode statistique | DataDriftPreset Evidently | Standard de la lib, HTML beau out of the box |
+| Seuil de détection | 50% par défaut Evidently + liste features exposée | Comex voit "OK / Détecté", DSI voit la liste précise |
+| Stockage rapport HTML | latest.html + historique daté | Dashboard pointe sur latest, brique 9 pourra lister l'historique |
+| Où placer le service | drift.py existant complété | Pattern cohérent avec llm_cost.py |
+| UX dans le dashboard | Enrichir dashboard + lien rapport | Minimum viable, maximum visuel |
+| Source des données current | Fichier clients_current.csv fixe | Déjà prévu comme point d'injection incident 2 |
+
+### Structure de la réponse `/dashboard/direction` (bloc drift)
+
+```json
+"drift": {
+  "drift_detected": true,
+  "nb_features_drifted": 3,
+  "nb_features_total": 6,
+  "drifted_features": [
+    "derniere_interaction_jours",
+    "nb_interactions_90j",
+    "solde_moyen"
+  ],
+  "share_drifted": 0.5,
+  "computed_at": "2026-10-22T13:00:34.464347",
+  "report_available": true
+}
+```
+
+### Les 2 nouveaux endpoints
+
+- **POST /monitoring/drift/recompute** (direction only) : force un recalcul Evidently complet, met à jour `_LAST_REPORT` en mémoire + régénère latest.html
+- **GET /monitoring/drift/report** (direction only) : sert le HTML Evidently latest.html directement dans le navigateur via HTMLResponse
+
+### Pattern archi hexagonale
+
+La brique 8 est **le troisième exemple hexagonal du projet**, après l'adapter LLM (brique 1) et l'adapter log coût (brique 7). Elle complète la démonstration pour le talk :
+
+- **Adapter technique** `app/monitoring/drift.py` : contient tout le code Evidently. Signature `run_drift_report(reference_df=None, current_df=None)`. Si on remplace Evidently par Nannyml ou Alibi Detect demain, on change **ce fichier et rien d'autre**.
+- **Centre métier** `app/core/routes.py` : consomme `run_drift_report()` et `get_last_drift_report()` comme boîtes noires. Ne connaît pas Evidently.
+- **Adapter présentation** `static/direction/app.js` : `renderDriftSection()` affiche. Ne connaît pas l'adapter technique.
+- **Bonus production** : le même adapter sert 2 formats de sortie (dict JSON synthétique pour le dashboard, HTML brut pour le rapport détaillé). **Un adapter, deux consommateurs, zéro duplication.**
+
+### Résultat observé (données du jour)
+
+Sur les 6 features numériques testées (age_client, anciennete_mois, produits_detenus, solde_moyen, nb_interactions_90j, derniere_interaction_jours), **3 ont dérivé** :
+
+- **solde_moyen** : les clients actuels ont des soldes significativement plus faibles
+- **nb_interactions_90j** : moins d'interactions récentes en moyenne
+- **derniere_interaction_jours** : les clients contactent moins souvent, l'écart depuis la dernière interaction s'est allongé
+
+**Interprétation métier** : les clients deviennent moins actifs et moins engagés. **Signal fort de churn à venir.** Le modèle, entraîné sur une baseline où les clients étaient plus actifs, va avoir tendance à sous-estimer le risque de churn sur ces nouveaux profils.
+
+### Narratif pour le talk 1er décembre
+
+Le dashboard affiche "DÉTECTÉE" **dès aujourd'hui**. Pas semaine 4, dès maintenant. Pourquoi ?
+
+Parce que les 2 CSV baseline et current sont déjà différents. **Mais le modèle, lui, tourne sur les features de baseline** (celles chargées par `init_db.py`). Donc **la dérive est signalée, mais pas encore impactante**.
+
+**Semaine 4, l'incident 2 déclenche** : `scripts/init_db.py` est modifié pour charger `clients_current.csv` à la place. **À ce moment-là** :
+- Le modèle commence à prédire sur des données qui ont dérivé depuis 3 semaines
+- Les scores de churn deviennent incohérents (sous-estimés)
+- Les clients à risque réel ne sont plus détectés
+- Les conseillers appellent les mauvais clients
+- La direction découvre le problème en analysant les résultats business
+
+**Diagnostic post-mortem** : "le monitoring avait raison depuis 3 semaines, personne ne regardait le dashboard". **C'est l'histoire de 80% des incidents MLOps en entreprise.**
+
+### Tips
+
+> Tip. Cache mémoire via module-level singleton. `_LAST_REPORT: Optional[dict] = None` au top-level de `drift.py` + `get_last_drift_report()` qui le retourne. Pattern lightweight, zéro dépendance, parfait pour un cache "dernier résultat connu".
+
+> Tip. Signature flexible avec None par défaut. `run_drift_report(reference_df=None, current_df=None)`. Si rien n'est passé, charge les 2 CSV. Permet aux tests unitaires de passer des DataFrames custom tout en gardant un appel ultra-simple en prod.
+
+> Tip. Rapport HTML dual : historisé + latest. Chaque run écrit 2 fichiers : `drift_<ts>.html` pour l'historique + `latest.html` pour l'accès rapide. Dashboard pointe sur latest, brique 9 pourra lister l'historique.
+
+> Tip. HTMLResponse de FastAPI pour servir du HTML brut. Au lieu de retourner un JSON ou de rediriger, `HTMLResponse(content=html, status_code=200)` sert le contenu directement. Parfait pour les rapports générés.
+
+> Piège. Oublier `from pathlib import Path` en top-level. Si Path est utilisé dans un endpoint sans import explicite, NameError au premier appel. Vérifier à l'import : `python -c "from app.core.routes import router"`.
+
+> Piège. Evidently v0.4 vs v0.5 : API différente. En v0.4, `from evidently.report import Report`. En v0.5+, `from evidently import Report`. Figer la version dans requirements.txt (`evidently==0.4.37`).
+
+### Métriques
+
+- Latence calcul initial Evidently au boot : ~500 ms sur 1000 lignes
+- Latence GET /dashboard/direction (lecture cache) : ~1 ms
+- Latence POST /monitoring/drift/recompute : ~500 ms (recalcul complet)
+- Taille rapport HTML Evidently : ~1.5 MB
+- 3/6 features détectées comme dérivées (seuil 50% atteint pile)
 
 ---
+
 
 ## Brique 9. Scheduler
 
@@ -1687,7 +1893,7 @@ Leçon : la fenêtre privée est le test imparable. Si ça marche en privée et 
 
 ---
 
-Dernière mise à jour : 22 octobre 2026, après la brique 7 (dashboard direction V2 UX premium).
-Prochaine mise à jour : à la livraison de la brique 8 (monitoring Evidently).
+Dernière mise à jour : 22 octobre 2026, après la brique 8 (monitoring Evidently + détection de dérive).
+Prochaine mise à jour : à la livraison de la brique 9 (scheduler APScheduler + SQLite historisation).
 
 ---
