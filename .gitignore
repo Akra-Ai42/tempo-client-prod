@@ -55,3 +55,19 @@ htmlcov/
 
 # Playbook privé d'injection des incidents (NE JAMAIS COMMITER)
 docs/INCIDENT_INJECTION_PLAYBOOK.md
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Session cookies (tests manuels)
+cookies*.txt
+
+# Env
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db

@@ -23,10 +23,14 @@ from app.core.schemas import (
     ClientWithUrgence,
     DashboardKPI,
     ExplainResponse,
+    MLOpsStats,
+    PortfolioStats,
     RecommendResponse,
     ScoreResponse,
+    TopClientEntry,
 )
 from app.core.scoring import get_all_scores, get_score
+from app.monitoring.llm_cost import read_cost_log, get_first_of_month, get_24h_ago
 from app.llm.base import LLMProviderError
 from app.monitoring.audit_log import log_audit_event
 
@@ -334,5 +338,88 @@ async def get_recommendations(
 
 @router.get("/dashboard/direction", response_model=DashboardKPI)
 async def get_direction_dashboard(user: User = Depends(require_direction)):
-    """Dashboard KPI pour la direction marketing (vue agregee)."""
-    raise HTTPException(status_code=501, detail="A implementer en brique 7")
+    """Dashboard KPI pour la direction (vue agregee business + ML Ops).
+
+    Compose 3 vues :
+        - portfolio : repartition urgence, score moyen, taux churn predit
+        - ml_ops : couts LLM (mois + 24h), hit rate cache, latence moyenne
+        - top_clients_risque : 10 clients avec le score churn le plus eleve
+
+    Pattern archi :
+        - lit les scores depuis le pre-scoring en memoire (brique 10a)
+        - lit les couts LLM depuis l'adapter llm_cost (brique 1)
+        - lit les clients depuis le singleton clients (brique 5)
+        - zero appel ML, zero appel LLM, requete ultra-rapide
+    """
+    # 1. Portfolio stats depuis le pre-scoring
+    all_scores = get_all_scores()
+    total = len(all_scores)
+
+    nb_high = sum(1 for s in all_scores.values() if s.urgence == "high")
+    nb_medium = sum(1 for s in all_scores.values() if s.urgence == "medium")
+    nb_low = sum(1 for s in all_scores.values() if s.urgence == "low")
+
+    score_moyen = (
+        sum(s.score_churn for s in all_scores.values()) / total
+        if total > 0 else 0.0
+    )
+
+    # Taux churn predit = pct des clients avec score >= 0.5 (seuil binaire)
+    nb_predicted_churn = sum(1 for s in all_scores.values() if s.score_churn >= 0.5)
+    taux_churn_predit = (nb_predicted_churn * 100 / total) if total > 0 else 0.0
+
+    portfolio = PortfolioStats(
+        total_clients=total,
+        nb_high=nb_high,
+        nb_medium=nb_medium,
+        nb_low=nb_low,
+        pct_high=round(nb_high * 100 / total, 1) if total > 0 else 0.0,
+        pct_medium=round(nb_medium * 100 / total, 1) if total > 0 else 0.0,
+        pct_low=round(nb_low * 100 / total, 1) if total > 0 else 0.0,
+        score_moyen=round(score_moyen, 3),
+        taux_churn_predit=round(taux_churn_predit, 1),
+    )
+
+    # 2. ML Ops stats depuis le log LLM
+    stats_mois = read_cost_log(since=get_first_of_month())
+    stats_24h = read_cost_log(since=get_24h_ago())
+
+    ml_ops = MLOpsStats(
+        cost_llm_mois_courant_usd=stats_mois["total_cost_usd"],
+        cost_llm_24h_usd=stats_24h["total_cost_usd"],
+        nb_appels_mois=stats_mois["nb_calls"],
+        nb_appels_24h=stats_24h["nb_calls"],
+        hit_rate_pct=stats_mois["hit_rate_pct"],
+        avg_latency_ms=stats_mois["avg_latency_ms"],
+        last_call_at=stats_mois["last_call_at"],
+    )
+
+    # 3. Top 10 clients a risque toutes regions
+    all_clients = get_all_clients()
+    clients_by_id = {c["id"]: c for c in all_clients}
+
+    sorted_scores = sorted(
+        all_scores.values(),
+        key=lambda s: s.score_churn,
+        reverse=True,
+    )[:10]
+
+    top_clients = []
+    for s in sorted_scores:
+        client = clients_by_id.get(s.client_id)
+        if client is None:
+            continue
+        top_clients.append(TopClientEntry(
+            id=s.client_id,
+            prenom=client["prenom"],
+            nom=client["nom"],
+            region=client["region"],
+            score_churn=round(s.score_churn, 3),
+            urgence=s.urgence,
+        ))
+
+    return DashboardKPI(
+        portfolio=portfolio,
+        ml_ops=ml_ops,
+        top_clients_risque=top_clients,
+    )

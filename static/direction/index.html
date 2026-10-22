@@ -5,47 +5,231 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tempo Client — Direction</title>
   <link rel="stylesheet" href="/static/shared/style.css">
+  <style>
+    body.direction-v2 {
+      margin: 0;
+      padding: 0;
+      background: var(--surface-0);
+      min-height: 100vh;
+    }
+    .direction-main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 32px;
+    }
+    .section-direction {
+      margin-bottom: 32px;
+    }
+    .section-direction .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .section-direction .section-title-big {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .btn-refresh {
+      background: var(--surface-1);
+      border: 1px solid var(--border-regular);
+      color: var(--text-secondary);
+      padding: 6px 14px;
+      font-size: 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .btn-refresh:hover {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+    .btn-switch {
+      background: var(--accent);
+      color: white;
+      border: 1px solid var(--accent);
+      padding: 5px 12px;
+      font-size: 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      margin-right: 8px;
+      text-decoration: none;
+    }
+    .btn-switch:hover { background: #223a52; }
+
+    .kpi-grid-direction {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    .kpi-card-direction {
+      background: var(--surface-1);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px;
+    }
+    .kpi-card-direction .kpi-head-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+    .kpi-card-direction .kpi-value {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+    .kpi-card-direction .kpi-value.alert { color: var(--danger); }
+    .kpi-card-direction .kpi-value.warning { color: var(--highlight); }
+    .kpi-card-direction .kpi-value.success { color: var(--success); }
+    .kpi-card-direction .kpi-sub-direction {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      margin-top: 4px;
+    }
+
+    .portfolio-row {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 24px;
+      background: var(--surface-1);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 20px;
+    }
+    .donut-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .donut-legend {
+      margin-top: 12px;
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .donut-legend .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-secondary);
+    }
+    .donut-legend .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .portfolio-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      align-content: center;
+    }
+    .portfolio-stat {
+      padding: 12px 0;
+    }
+    .portfolio-stat .label {
+      font-size: 10px;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .portfolio-stat .value {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+      margin-top: 2px;
+    }
+
+    .top-list {
+      background: var(--surface-1);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .top-row {
+      display: grid;
+      grid-template-columns: 32px 1fr 80px 180px 24px;
+      align-items: center;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.08s;
+    }
+    .top-row:last-child { border-bottom: none; }
+    .top-row:hover { background: var(--surface-2); }
+    .top-row .rank {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      font-variant-numeric: tabular-nums;
+    }
+    .top-row .top-name {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    .top-row .top-region {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      margin-left: 8px;
+    }
+    .top-row .top-score {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .top-row .bar-container {
+      height: 6px;
+      background: var(--surface-3);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .top-row .bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+    .top-row .bar-fill.high { background: var(--danger); }
+    .top-row .bar-fill.medium { background: var(--highlight); }
+    .top-row .bar-fill.low { background: var(--success); }
+    .top-row .arrow {
+      color: var(--text-quaternary);
+      font-size: 12px;
+    }
+
+    .loading-state {
+      padding: 40px;
+      text-align: center;
+      color: var(--text-tertiary);
+      font-size: 13px;
+    }
+  </style>
 </head>
-<body>
-  <header class="topbar">
-    <h1>Tempo Client — Direction</h1>
-    <div class="topbar-user">
-      <span id="user-name">—</span>
-      <button id="logout-btn">Déconnexion</button>
+<body class="direction-v2">
+
+  <!-- Top bar (meme pattern que la vue conseiller V2) -->
+  <header class="app-topbar-v2">
+    <div class="brand">Tempo Client - Direction</div>
+    <div class="user-chip">
+      <a href="/static/conseiller/index.html" class="btn-switch">Vue conseiller</a>
+      <div class="avatar" id="user-avatar">-</div>
+      <span id="user-name">-</span>
+      <button class="btn-logout" id="logout-btn">Deconnexion</button>
     </div>
   </header>
 
-  <main class="content">
-    <h2>Vue d'ensemble</h2>
-    <div class="kpi-grid" id="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-label">Clients total</div>
-        <div class="kpi-value" id="kpi-total">—</div>
-      </div>
-      <div class="kpi-card alert">
-        <div class="kpi-label">Risque haut</div>
-        <div class="kpi-value" id="kpi-risque-haut">—</div>
-        <div class="kpi-sub">À traiter en priorité</div>
-      </div>
-      <div class="kpi-card warning">
-        <div class="kpi-label">Risque moyen</div>
-        <div class="kpi-value" id="kpi-risque-moyen">—</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Taux churn prédit</div>
-        <div class="kpi-value" id="kpi-churn">—</div>
-      </div>
-      <div class="kpi-card alert">
-        <div class="kpi-label">Coût LLM mois courant</div>
-        <div class="kpi-value" id="kpi-cout-llm">—</div>
-        <div class="kpi-sub">Budget mensuel : 50 $</div>
-      </div>
-      <div class="kpi-card" id="kpi-derive-card">
-        <div class="kpi-label">Dérive données</div>
-        <div class="kpi-value" id="kpi-derive">—</div>
-        <div class="kpi-sub">Détection Evidently</div>
-      </div>
-    </div>
+  <main class="direction-main" id="main-content">
+    <div class="loading-state">Chargement du dashboard...</div>
   </main>
 
   <script src="/static/direction/app.js"></script>

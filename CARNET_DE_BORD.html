@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mon carnet de bord — Atelier 2 jours</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #0F1A2E;
+    --paper: #FAFAF7;
+    --white: #ffffff;
+    --muted: #6B6F76;
+    --line: #E5E5E0;
+    --teal: #1D9E75;
+    --teal-dk: #0F6E56;
+    --coral: #FF6B47;
+    --amber: #F5B83D;
+    --blue: #378ADD;
+    --purple: #7F77DD;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+    line-height: 1.5;
+  }
+  .container { max-width: 760px; margin: 0 auto; }
+
+  /* HEADER */
+  .header { margin-bottom: 2rem; }
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  h1 {
+    font-family: Georgia, serif;
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--ink);
+  }
+  .subtitle { font-size: 14px; color: var(--muted); margin-bottom: 0; }
+
+  /* NAME INPUT */
+  .name-card {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .name-card label {
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .name-card input {
+    flex: 1;
+    min-width: 200px;
+    border: none;
+    border-bottom: 1.5px solid var(--line);
+    padding: 4px 0;
+    font-size: 15px;
+    font-family: inherit;
+    background: transparent;
+    color: var(--ink);
+    outline: none;
+  }
+  .name-card input:focus { border-bottom-color: var(--teal); }
+
+  /* PROGRESS */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .prog-label { font-size: 12px; color: var(--muted); }
+  .reset-btn {
+    font-size: 11px;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    background: transparent;
+    padding: 5px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .reset-btn:hover { background: var(--white); border-color: #ccc; color: var(--ink); }
+  .progress-bar-bg {
+    height: 6px;
+    background: #e8e8e3;
+    border-radius: 3px;
+    margin-bottom: 2rem;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--teal), var(--coral));
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+
+  /* DAY DIVIDER */
+  .day-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 2rem 0 1rem;
+  }
+  .day-divider .day-label {
+    font-family: Georgia, serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .day-divider .day-sub {
+    font-size: 12px;
+    color: var(--muted);
+    font-style: italic;
+  }
+  .day-divider .line-fill {
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  /* SECTION */
+  .section {
+    margin-bottom: 10px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--white);
+    transition: box-shadow 0.2s;
+  }
+  .section.has-open { box-shadow: 0 2px 10px rgba(15, 26, 46, 0.05); }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 16px;
+    cursor: pointer;
+    background: var(--white);
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .section-header:hover { background: #fbfaf6; }
+  .section-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--line);
+    color: var(--white);
+    font-size: 12px;
+    font-weight: 700;
+    font-family: Georgia, serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+  .section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    flex: 1;
+  }
+  .section-time {
+    font-size: 11px;
+    color: var(--muted);
+    margin-right: 8px;
+  }
+  .section-count {
+    font-size: 11px;
+    color: var(--muted);
+    background: #f0efea;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .chevron {
+    font-size: 10px;
+    color: #aaa;
+    transition: transform 0.2s;
+    margin-left: 4px;
+  }
+  .chevron.open { transform: rotate(90deg); }
+
+  /* SECTION COMPLETED STATE */
+  .section.completed .section-num { background: var(--teal); }
+  .section.completed .section-count { background: #d8f0e6; color: var(--teal-dk); font-weight: 600; }
+
+  /* INTRO BLOCK */
+  .section-intro {
+    display: none;
+    padding: 14px 16px 4px 56px;
+    font-size: 12.5px;
+    color: var(--muted);
+    font-style: italic;
+    line-height: 1.6;
+    border-top: 1px solid var(--line);
+    background: #fbfaf6;
+  }
+  .section-intro.open { display: block; }
+
+  /* ITEMS */
+  .items { display: none; padding: 4px 0 8px; background: #fbfaf6; }
+  .items.open { display: block; }
+  .item {
+    display: flex;
+    align-items: flex-start;
+    padding: 7px 16px 7px 56px;
+  }
+  .item label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    width: 100%;
+  }
+  .item input[type=checkbox] {
+    margin-top: 3px;
+    flex-shrink: 0;
+    cursor: pointer;
+    accent-color: var(--teal);
+    width: 15px;
+    height: 15px;
+  }
+  .item-text {
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  .item-text.done {
+    color: #aaa;
+    text-decoration: line-through;
+  }
+  .item-tip {
+    display: block;
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 2px;
+    font-style: italic;
+  }
+
+  /* CELEBRATION BANNER */
+  .celebrate {
+    background: var(--teal);
+    color: var(--white);
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+    margin-top: 2rem;
+    display: none;
+  }
+  .celebrate.show { display: block; }
+  .celebrate h2 {
+    font-family: Georgia, serif;
+    font-size: 22px;
+    margin-bottom: 6px;
+  }
+  .celebrate p { font-size: 14px; opacity: 0.9; }
+
+  /* FOOTER */
+  .footer-note {
+    text-align: center;
+    margin-top: 2.5rem;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  @media (max-width: 500px) {
+    body { padding: 1.5rem 0.75rem 3rem; }
+    h1 { font-size: 26px; }
+    .section-header { padding: 11px 12px; gap: 10px; }
+    .section-num { width: 24px; height: 24px; font-size: 11px; }
+    .section-title { font-size: 13px; }
+    .section-time { display: none; }
+    .item { padding-left: 46px; padding-right: 12px; }
+    .section-intro { padding-left: 46px; padding-right: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <p class="eyebrow">Atelier 2 jours · 14h</p>
+    <h1>Mon carnet de bord</h1>
+    <p class="subtitle">Coche chaque tâche au fur et à mesure. Ta progression est sauvegardée automatiquement dans ce navigateur.</p>
+  </div>
+
+  <div class="name-card">
+    <label for="student-name">Ce carnet est à</label>
+    <input type="text" id="student-name" placeholder="Prénom Nom" autocomplete="off">
+  </div>
+
+  <div class="top-bar">
+    <span class="prog-label" id="prog-label">0 / 0 tâches complétées</span>
+    <button class="reset-btn" onclick="resetAll()">Tout réinitialiser</button>
+  </div>
+  <div class="progress-bar-bg">
+    <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div>
+  </div>
+
+  <div id="sections"></div>
+
+  <div class="celebrate" id="celebrate">
+    <h2>Bravo — ton site est prêt 🎉</h2>
+    <p>Toutes les étapes sont validées. Il est temps de partager ton URL.</p>
+  </div>
+
+  <p class="footer-note">Carnet de bord local · Tes données restent dans ton navigateur</p>
+</div>
+
+<script>
+const sections = [
+  // ===== JOUR 1 =====
+  {
+    day: 1,
+    title: "Choisir & cadrer mon projet",
+    time: "1h · 10h — 11h",
+    intro: "Avant de coder, je décide. Quelle typologie de site, pour qui, avec quel message. Un brief écrit court mais clair, c'est ce qui guide tout le reste.",
+    items: [
+      { text: "Choisir une typologie : site perso / événementiel / manifeste" },
+      { text: "Définir le public cible en une phrase", tip: "Ex : « Les recruteurs en communication qui consultent mon profil »" },
+      { text: "Écrire le message principal en une phrase", tip: "Si on retient une seule chose en quittant le site, c'est quoi ?" },
+      { text: "Définir le ton : sérieux, fun, premium, militant, intime…" },
+      { text: "Définir l'action attendue du visiteur", tip: "Me contacter ? Acheter un billet ? Partager ?" },
+    ]
+  },
+  {
+    day: 1,
+    title: "Contenu & moodboard",
+    time: "1h30 · 11h — 12h30",
+    intro: "Le piège classique : commencer à coder avec un Lorem Ipsum « pour voir ». On rédige d'abord. On collecte les images. On rassemble les références. Coder du vide, c'est perdre du temps.",
+    items: [
+      { text: "Rédiger le titre principal du site (le hero)" },
+      { text: "Rédiger l'accroche / sous-titre (1-2 phrases)" },
+      { text: "Rédiger le contenu de chaque section de la page d'accueil" },
+      { text: "Rédiger le contenu complet de la page secondaire" },
+      { text: "Collecter et trier 3 à 5 images en qualité correcte", tip: "Sources libres recommandées : Unsplash, Pexels, mes propres photos" },
+      { text: "Constituer un moodboard de 3 à 5 références visuelles", tip: "Sites que tu trouves beaux, qui correspondent à ton ton" },
+      { text: "Choisir une palette de 3 à 4 couleurs", tip: "1 dominante, 1 accent, 1 fond, 1 texte" },
+      { text: "Choisir une typographie pour les titres et une pour les textes", tip: "Google Fonts, ou polices système si tu veux la jouer minimaliste" },
+    ]
+  },
+  {
+    day: 1,
+    title: "Wireframe papier",
+    time: "1h · 13h30 — 14h30",
+    intro: "Pas de Figma. Une feuille A4, un crayon, 5 minutes par page. Tu dessines les zones, pas les détails. Cette étape clarifie ta tête plus vite que n'importe quel outil.",
+    items: [
+      { text: "Dessiner le wireframe de la page d'accueil sur papier" },
+      { text: "Identifier les grandes zones : header, hero, sections, footer" },
+      { text: "Décider de l'ordre des sections sur l'accueil" },
+      { text: "Dessiner le wireframe de la page secondaire sur papier" },
+      { text: "Photographier ou scanner les croquis (utile pour s'y référer)" },
+    ]
+  },
+  {
+    day: 1,
+    title: "Structure HTML des 2 pages",
+    time: "1h30 · 14h30 — 16h",
+    intro: "Maintenant on code, mais sans CSS. La règle d'or : une page doit déjà être lisible et hiérarchisée même sans aucun style. Si c'est le cas, ta structure est bonne.",
+    items: [
+      { text: "Ouvrir le starter kit dans VS Code" },
+      { text: "Renseigner le <title> et la <meta name='description'> dans chaque page" },
+      { text: "Structurer la page d'accueil avec les balises sémantiques", tip: "header, main, section, article, footer" },
+      { text: "Remplir la page d'accueil avec tes vrais textes (pas de Lorem)" },
+      { text: "Structurer la page secondaire de la même façon" },
+      { text: "Remplir la page secondaire avec tes vrais textes" },
+      { text: "Vérifier la hiérarchie des titres : un seul h1 par page, puis h2, h3" },
+      { text: "Créer les liens de navigation entre les 2 pages" },
+      { text: "Ajouter les images avec attribut alt descriptif" },
+      { text: "Tester chaque page dans le navigateur sans CSS — est-ce lisible ?" },
+    ]
+  },
+  {
+    day: 1,
+    title: "CSS de base",
+    time: "1h · 16h — 17h",
+    intro: "On pose la fondation. Pas de fioritures, pas de hover sophistiqué. Couleurs, typo, espacements généraux. La maison doit tenir debout avant qu'on choisisse la déco.",
+    items: [
+      { text: "Lier le fichier style.css dans le <head> des 2 pages" },
+      { text: "Appliquer un reset CSS de base (marges, paddings, box-sizing)" },
+      { text: "Importer la / les typographie(s) choisie(s)" },
+      { text: "Définir la couleur de fond et la couleur de texte par défaut" },
+      { text: "Définir la taille de police de base (16px ou 1rem)" },
+      { text: "Styler la hiérarchie des titres (h1, h2, h3)" },
+      { text: "Définir une largeur max pour le contenu et le centrer" },
+      { text: "Styler les liens (couleur, suppression du soulignement si voulu)" },
+      { text: "Tester dans le navigateur — la base doit déjà avoir une identité" },
+    ]
+  },
+  // ===== JOUR 2 =====
+  {
+    day: 2,
+    title: "Mise en forme avancée",
+    time: "1h30 · 9h30 — 11h",
+    intro: "Le passage du « ça marche » au « ça donne envie ». On soigne le hero, on travaille la hiérarchie visuelle, on aère. Les espaces blancs valent autant que les éléments remplis.",
+    items: [
+      { text: "Soigner le hero de l'accueil : taille du titre, espace, accroche visible" },
+      { text: "Styler chaque section : padding vertical généreux, séparations claires" },
+      { text: "Styler les cartes / blocs de contenu (border, padding, ombre légère)" },
+      { text: "Styler les boutons : padding, border-radius, couleurs cohérentes" },
+      { text: "Ajouter un effet :hover sur les liens et boutons" },
+      { text: "Styler le header / la navigation" },
+      { text: "Styler le footer" },
+      { text: "Styler la page secondaire pour qu'elle soit visuellement cohérente" },
+      { text: "Vérifier la cohérence : un seul style de bouton partout, mêmes espacements" },
+    ]
+  },
+  {
+    day: 2,
+    title: "Responsive · adapter au mobile",
+    time: "1h30 · 11h — 12h30",
+    intro: "Une seule media query suffit. On bascule sur mobile, on regarde ce qui casse, on corrige. Pas besoin de 5 breakpoints pour ce projet.",
+    items: [
+      { text: "Ouvrir le mode responsive du navigateur (F12 puis icône mobile)" },
+      { text: "Identifier les éléments qui débordent ou se chevauchent sur petit écran" },
+      { text: "Ajouter une media query pour les écrans < 768px" },
+      { text: "Adapter la taille des titres pour qu'ils tiennent sur une ligne" },
+      { text: "Adapter la navigation pour mobile (menu burger ou stack vertical)" },
+      { text: "Vérifier que les images ne débordent jamais (max-width: 100%)" },
+      { text: "Vérifier les paddings sur mobile (ne pas coller au bord)" },
+      { text: "Tester sur plusieurs tailles : 375px, 768px, 1024px, 1440px" },
+    ]
+  },
+  {
+    day: 2,
+    title: "Touche JS · une interaction",
+    time: "1h · 13h30 — 14h30",
+    intro: "Une seule interaction, bien faite. Le snippet existe — ton job c'est de le lire, le comprendre, l'adapter. C'est la différence entre copier-coller et copier-comprendre.",
+    items: [
+      { text: "Choisir UNE interaction : menu burger / smooth scroll / dark mode / animation au scroll" },
+      { text: "Lire le snippet correspondant dans le guide de référence" },
+      { text: "L'intégrer à ta page (dans un <script> en bas de body)" },
+      { text: "L'adapter à TES classes / TES IDs (ne pas garder les noms du snippet)" },
+      { text: "Tester que ça marche sur les 2 pages" },
+      { text: "Vérifier qu'il n'y a aucune erreur dans la console (F12)" },
+    ]
+  },
+  {
+    day: 2,
+    title: "Polish & accessibilité",
+    time: "1h · 14h30 — 15h30",
+    intro: "L'étape qui sépare un site d'étudiant d'un site qu'on partage sans complexe sur LinkedIn. Aucune de ces tâches n'est compliquée, toutes comptent.",
+    items: [
+      { text: "Vérifier que chaque <img> a un alt descriptif et utile" },
+      { text: "Vérifier la hiérarchie des titres : un seul h1 par page, pas de saut" },
+      { text: "Vérifier les contrastes de couleurs", tip: "Outil : WebAIM Contrast Checker — minimum 4.5:1 pour les textes" },
+      { text: "Ajouter un favicon", tip: "Outil : favicon.io pour le générer rapidement" },
+      { text: "Rédiger une meta description correcte sur chaque page (max 160 caractères)" },
+      { text: "Vérifier le <title> de chaque page (visible dans l'onglet du navigateur)" },
+      { text: "Tester la navigation au clavier (Tab, Entrée)" },
+      { text: "Relire tous les textes — fautes, coquilles, ponctuation" },
+      { text: "Renommer les fichiers proprement (pas d'espaces, pas d'accents)" },
+    ]
+  },
+  {
+    day: 2,
+    title: "Mise en ligne & restitution",
+    time: "1h30 · 15h30 — 17h",
+    intro: "Le moment où ton site devient vraiment un site. Une URL réelle, un lien partageable. Puis tu présentes au groupe — pas juste tu montres, tu pitches.",
+    items: [
+      { text: "Vérifier que tous les fichiers sont bien dans un seul dossier" },
+      { text: "Choisir une méthode d'hébergement : Netlify Drop OU GitHub Pages" },
+      { text: "Glisser-déposer le dossier sur Netlify Drop (le plus rapide)", tip: "Ou bien : créer un repo GitHub, push, activer Pages" },
+      { text: "Vérifier que le site fonctionne bien sur l'URL en ligne" },
+      { text: "Vérifier que les images et liens internes marchent en ligne" },
+      { text: "Copier l'URL et la noter quelque part de sûr" },
+      { text: "Préparer un pitch de 2 minutes : typologie, choix, ce dont je suis fier" },
+      { text: "Présenter mon site au groupe" },
+      { text: "Partager l'URL avec le formateur" },
+    ]
+  },
+];
+
+// ===== State =====
+const STORAGE_KEY = 'atelier_carnet_v1';
+const NAME_KEY = 'atelier_carnet_name';
+let checks = {};
+let openSections = new Set();
+let openIntros = new Set();
+try { checks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) {}
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(checks)); } catch(e) {}
+}
+
+function updateProgress() {
+  let total = 0, done = 0;
+  sections.forEach((s, si) => s.items.forEach((_, ii) => {
+    total++;
+    if (checks[si + '-' + ii]) done++;
+  }));
+  document.getElementById('prog-label').textContent = done + ' / ' + total + ' tâches complétées';
+  document.getElementById('prog-fill').style.width = (total ? Math.round(done / total * 100) : 0) + '%';
+  document.getElementById('celebrate').classList.toggle('show', total > 0 && done === total);
+}
+
+function updateSectionVisual(sectionEl, si) {
+  const sec = sections[si];
+  const done = sec.items.filter((_, ii) => checks[si + '-' + ii]).length;
+  const total = sec.items.length;
+  sectionEl.querySelector('.section-count').textContent = done + '/' + total;
+  sectionEl.classList.toggle('completed', done === total);
+}
+
+function resetAll() {
+  if (!confirm('Remettre toutes les cases à zéro ? Cette action est irréversible.')) return;
+  checks = {};
+  document.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);
+  document.querySelectorAll('.item-text').forEach(t => t.classList.remove('done'));
+  document.querySelectorAll('.section').forEach((el, i) => updateSectionVisual(el, i));
+  save();
+  updateProgress();
+}
+
+// ===== Name persistence =====
+const nameInput = document.getElementById('student-name');
+nameInput.value = localStorage.getItem(NAME_KEY) || '';
+nameInput.addEventListener('input', () => {
+  try { localStorage.setItem(NAME_KEY, nameInput.value); } catch(e) {}
+});
+
+// ===== Render =====
+const container = document.getElementById('sections');
+
+// Day 1 divider
+const day1Div = document.createElement('div');
+day1Div.className = 'day-divider';
+day1Div.innerHTML = `
+  <span class="day-label">Jour 1</span>
+  <span class="day-sub">Penser & Structurer</span>
+  <span class="line-fill"></span>
+`;
+container.appendChild(day1Div);
+
+let lastDay = 1;
+
+sections.forEach((sec, si) => {
+  if (sec.day !== lastDay) {
+    const dayDiv = document.createElement('div');
+    dayDiv.className = 'day-divider';
+    dayDiv.innerHTML = `
+      <span class="day-label">Jour ${sec.day}</span>
+      <span class="day-sub">Styliser & Publier</span>
+      <span class="line-fill"></span>
+    `;
+    container.appendChild(dayDiv);
+    lastDay = sec.day;
+  }
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'section';
+
+  const doneInSec = sec.items.filter((_, ii) => checks[si + '-' + ii]).length;
+  if (doneInSec === sec.items.length) wrapper.classList.add('completed');
+
+  const header = document.createElement('div');
+  header.className = 'section-header';
+  header.innerHTML = `
+    <span class="section-num">${si + 1}</span>
+    <span class="section-title">${sec.title}</span>
+    <span class="section-time">${sec.time}</span>
+    <span class="section-count">${doneInSec}/${sec.items.length}</span>
+    <span class="chevron">▶</span>
+  `;
+
+  const intro = document.createElement('div');
+  intro.className = 'section-intro';
+  intro.textContent = sec.intro;
+
+  const itemsDiv = document.createElement('div');
+  itemsDiv.className = 'items';
+
+  sec.items.forEach((item, ii) => {
+    const key = si + '-' + ii;
+    const row = document.createElement('div');
+    row.className = 'item';
+
+    const lbl = document.createElement('label');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = !!checks[key];
+
+    const textWrap = document.createElement('div');
+    const span = document.createElement('span');
+    span.className = 'item-text' + (cb.checked ? ' done' : '');
+    span.textContent = item.text;
+    textWrap.appendChild(span);
+
+    if (item.tip) {
+      const tip = document.createElement('span');
+      tip.className = 'item-tip';
+      tip.textContent = item.tip;
+      textWrap.appendChild(tip);
+    }
+
+    cb.addEventListener('change', () => {
+      checks[key] = cb.checked;
+      span.classList.toggle('done', cb.checked);
+      save();
+      updateProgress();
+      updateSectionVisual(wrapper, si);
+    });
+
+    lbl.appendChild(cb);
+    lbl.appendChild(textWrap);
+    row.appendChild(lbl);
+    itemsDiv.appendChild(row);
+  });
+
+  header.addEventListener('click', () => {
+    const isOpen = itemsDiv.classList.toggle('open');
+    intro.classList.toggle('open', isOpen);
+    header.querySelector('.chevron').classList.toggle('open', isOpen);
+    wrapper.classList.toggle('has-open', isOpen);
+  });
+
+  wrapper.appendChild(header);
+  wrapper.appendChild(intro);
+  wrapper.appendChild(itemsDiv);
+  container.appendChild(wrapper);
+});
+
+updateProgress();
+</script>
+</body>
+</html>

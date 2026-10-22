@@ -3,10 +3,6 @@
 Compare les features des 30 derniers jours à une baseline (snapshot
 du dataset d'entraînement). Génère un rapport HTML consultable.
 
-⚠️ INCIDENT 2 : le fichier generate_fake_data.py introduit volontairement
-   une dérive sur les features `nb_interactions_90j` et `solde_moyen`.
-   Le rapport Evidently doit la détecter — c'est le point d'entrée
-   pour les étudiants.
 """
 
 from pathlib import Path

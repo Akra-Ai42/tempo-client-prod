@@ -68,13 +68,51 @@ class RecommendResponse(BaseModel):
 
 # === Direction Dashboard ===
 
-class DashboardKPI(BaseModel):
-    nb_clients_total: int
-    nb_clients_risque_haut: int
-    nb_clients_risque_moyen: int
+class TopClientEntry(BaseModel):
+    """Entry du top 10 clients a risque pour le dashboard direction."""
+    id: int
+    prenom: str
+    nom: str
+    region: str
+    score_churn: float
+    urgence: str
+
+
+class PortfolioStats(BaseModel):
+    """Statistiques business du portefeuille clients."""
+    total_clients: int
+    nb_high: int
+    nb_medium: int
+    nb_low: int
+    pct_high: float
+    pct_medium: float
+    pct_low: float
+    score_moyen: float
     taux_churn_predit: float
-    cout_llm_mois_courant_usd: float
-    derive_detectee: bool
+
+
+class MLOpsStats(BaseModel):
+    """Statistiques techniques du systeme ML + LLM."""
+    cost_llm_mois_courant_usd: float
+    cost_llm_24h_usd: float
+    nb_appels_mois: int
+    nb_appels_24h: int
+    hit_rate_pct: float
+    avg_latency_ms: int
+    last_call_at: Optional[str] = None
+
+
+class DashboardKPI(BaseModel):
+    """Reponse complete du dashboard direction.
+
+    Agrege 3 vues :
+        - portfolio : KPI business pour le Comex
+        - ml_ops    : KPI techniques pour la DSI
+        - top_clients_risque : top 10 clients a risque toutes regions
+    """
+    portfolio: PortfolioStats
+    ml_ops: MLOpsStats
+    top_clients_risque: list[TopClientEntry]
 
 
 # === Client Summary (listing léger sans scoring) ===
