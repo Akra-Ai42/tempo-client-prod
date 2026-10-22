@@ -54,21 +54,25 @@ IS_PRODUCTION = ENVIRONMENT == "production"
 # === Utilisateurs en dur (démo uniquement) ===
 # ATTENTION : en production réelle, ces users doivent être stockés en DB
 # avec password hashé (bcrypt / argon2) et auth JWT ou OAuth2.
+# Hashes bcrypt générés — passwords en clair :
+#   conseiller_lille     -> "conseiller_lille2026"
+#   conseiller_marseille -> "conseiller_marseille2026"
+#   direction            -> "direction2026"
 DEMO_USERS = {
     "conseiller_lille": {
-        "password": "demo123",
+        "password_hash": b'$2b$12$tAuIkelU6Xmh2eeAd6SUoOmnokm1yDZy0WJ7eQ/hyxZQggVSMgiLm',
         "role": "conseiller",
         "region": "lille",
         "nom_affiche": "Marie Dubois",
     },
     "conseiller_marseille": {
-        "password": "demo123",
+        "password_hash": b'$2b$12$fGG0yj3L.8o5maaztmwwSe8dvONgpBzTlUevttytj6E1Zd0yUy5Gi',
         "role": "conseiller",
         "region": "marseille",
         "nom_affiche": "Karim Benali",
     },
     "direction": {
-        "password": "demo123",
+        "password_hash": b'$2b$12$KGR7UA5li2KdbyKvNvvQqu5KNIgrbMtjlSNJWhKdrIqTgRnGUhClm',
         "role": "direction",
         "region": None,
         "nom_affiche": "Direction Marketing",

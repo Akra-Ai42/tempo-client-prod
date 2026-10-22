@@ -1,74 +1,58 @@
-"""Endpoints d'authentification — login / logout.
+"""Endpoints FastAPI pour l'authentification Tempo Client."""
 
-Auth simplifiée pour la démo : 3 users en dur dans la config,
-mot de passe en clair (⚠️ démo uniquement).
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
-En production réelle :
-    - Users en DB avec password hashé (bcrypt / argon2)
-    - JWT ou OAuth2
-    - Rate limiting sur /login
-    - Audit log des connexions
-"""
-
-from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel
-
-from app.config import DEMO_USERS
-
-router = APIRouter()
-
-
-class LoginRequest(BaseModel):
-    username: str
-    password: str
+from app.auth.models import (
+    LoginRequest,
+    LoginResponse,
+    LogoutResponse,
+    MeResponse,
+    User,
+)
+from app.auth.session import (
+    get_current_user,
+    login_user,
+    logout_user,
+)
+from app.auth.users import get_user_by_username, verify_password
 
 
-class LoginResponse(BaseModel):
-    ok: bool
-    role: str
-    region: str | None
-    nom_affiche: str
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/auth/login", response_model=LoginResponse)
-async def login(payload: LoginRequest, request: Request):
-    """Vérifie les identifiants et pose un cookie de session."""
-    user = DEMO_USERS.get(payload.username)
-    if not user or user["password"] != payload.password:
-        raise HTTPException(status_code=401, detail="Identifiants invalides")
+@router.post("/login", response_model=LoginResponse)
+async def login(payload: LoginRequest, request: Request) -> LoginResponse:
+    """Authentifie un utilisateur et pose un cookie de session."""
+    user = get_user_by_username(payload.username)
+    if not user or not verify_password(payload.username, payload.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Identifiants invalides",
+        )
 
-    # Pose les infos du user en session (cookie signé)
-    request.session["username"] = payload.username
-    request.session["role"] = user["role"]
-    request.session["region"] = user["region"]
+    login_user(request, user)
 
     return LoginResponse(
-        ok=True,
-        role=user["role"],
-        region=user["region"],
-        nom_affiche=user["nom_affiche"],
+        username=user.username,
+        role=user.role,
+        region=user.region,
+        full_name=user.full_name,
     )
 
 
-@router.post("/auth/logout")
-async def logout(request: Request):
-    """Vide la session."""
-    request.session.clear()
-    return {"ok": True}
+@router.post("/logout", response_model=LogoutResponse)
+async def logout(request: Request) -> LogoutResponse:
+    """Deconnecte l'utilisateur en vidant la session."""
+    logout_user(request)
+    return LogoutResponse()
 
 
-@router.get("/auth/me")
-async def me(request: Request):
-    """Retourne les infos du user connecté (pour l'UI)."""
-    username = request.session.get("username")
-    if not username:
-        raise HTTPException(status_code=401, detail="Non connecté")
-    user = DEMO_USERS.get(username)
-    if not user:
-        raise HTTPException(status_code=401, detail="Session invalide")
-    return {
-        "username": username,
-        "role": user["role"],
-        "region": user["region"],
-        "nom_affiche": user["nom_affiche"],
-    }
+@router.get("/me", response_model=MeResponse)
+async def me(user: User = Depends(get_current_user)) -> MeResponse:
+    """Retourne l'identite de l'utilisateur courant."""
+    return MeResponse(
+        username=user.username,
+        role=user.role,
+        region=user.region,
+        full_name=user.full_name,
+    )

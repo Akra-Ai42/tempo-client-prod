@@ -1,105 +1,74 @@
-"""Middleware RBAC — contrôle d'accès basé sur les rôles.
+"""Controle d'acces base sur les roles (RBAC) via dependances FastAPI.
 
-Règles :
-    - Routes publiques : /, /health, /auth/login, /static/*
-    - Routes authentifiées : nécessitent un user en session
-    - Routes "direction" : nécessitent le rôle direction
-    - Routes "mes clients" : filtrées par région du conseiller
+Pattern :
+    - Chaque endpoint protege declare ses exigences via Depends()
+    - require_role("direction") -> l'user doit avoir ce role, sinon 403
+    - filter_clients_by_user() -> filtre la liste des clients selon le role
 
-⚠️ INCIDENT 3 : la condition de filtrage par région est inversée dans
-   ce fichier. Le conseiller Lille voit les clients Marseille et vice-versa.
-   À détecter par les étudiants au cours de la semaine Devoteam.
+Role vs region :
+    - role "direction"   : voit tous les clients, toutes regions
+    - role "conseiller"  : voit uniquement les clients de SA region
 """
 
-from fastapi import Request
-from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi import Depends, HTTPException, status
 
-from app.config import DEMO_USERS
-
-
-# Routes publiques — ne nécessitent pas d'auth
-PUBLIC_PATHS = {
-    "/",
-    "/health",
-    "/auth/login",
-    "/favicon.ico",
-}
-
-# Préfixes publics
-PUBLIC_PREFIXES = (
-    "/static/",
-    "/docs",
-    "/openapi.json",
-    "/redoc",
-)
-
-# Routes réservées à la direction
-DIRECTION_ONLY_PREFIXES = (
-    "/dashboard/direction",
-)
+from app.auth.models import User
+from app.auth.session import get_current_user
 
 
-def _is_public(path: str) -> bool:
-    if path in PUBLIC_PATHS:
-        return True
-    return any(path.startswith(p) for p in PUBLIC_PREFIXES)
+def require_role(required_role: str):
+    """Fabrique une dependance FastAPI qui exige un role precis.
 
-
-class RBACMiddleware(BaseHTTPMiddleware):
-    """Vérifie l'authentification et les permissions sur chaque requête."""
-
-    async def dispatch(self, request: Request, call_next):
-        path = request.url.path
-
-        if _is_public(path):
-            return await call_next(request)
-
-        # Vérifier qu'un user est en session
-        username = request.session.get("username")
-        if not username:
-            return JSONResponse(
-                status_code=401,
-                content={"detail": "Authentification requise"},
+    Usage :
+        @router.get("/dashboard")
+        async def dashboard(user: User = Depends(require_role("direction"))):
+            ...
+    """
+    async def _check(user: User = Depends(get_current_user)) -> User:
+        if user.role != required_role:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Acces reserve au role '{required_role}'",
             )
-
-        user = DEMO_USERS.get(username)
-        if not user:
-            return JSONResponse(
-                status_code=401,
-                content={"detail": "Session invalide"},
-            )
-
-        # Routes réservées direction
-        if any(path.startswith(p) for p in DIRECTION_ONLY_PREFIXES):
-            if user["role"] != "direction":
-                return JSONResponse(
-                    status_code=403,
-                    content={"detail": "Accès refusé — réservé à la direction"},
-                )
-
-        # Pose user sur la request pour les endpoints
-        request.state.user = user
-        return await call_next(request)
+        return user
+    return _check
 
 
-def filter_clients_by_region(user: dict, all_clients: list) -> list:
-    """Filtre la liste des clients selon la région du conseiller.
+def require_conseiller(user: User = Depends(get_current_user)) -> User:
+    """Dependance : exige role 'conseiller'."""
+    if user.role != "conseiller":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acces reserve aux conseillers",
+        )
+    return user
 
-    ⚠️ INCIDENT 3 : la condition est inversée (!= au lieu de ==).
-    Le conseiller Lille voit les clients de TOUTES les régions SAUF Lille.
-    Donc il voit Marseille. Et le conseiller Marseille voit Lille.
-    Bug subtil que les étudiants doivent détecter en lisant les logs d'accès.
+
+def require_direction(user: User = Depends(get_current_user)) -> User:
+    """Dependance : exige role 'direction'."""
+    if user.role != "direction":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acces reserve a la direction",
+        )
+    return user
+
+
+def filter_clients_by_user(clients: list[dict], user: User) -> list[dict]:
+    """Filtre la liste des clients selon le role et la region de l'user.
+
+    Regles metier :
+        - Direction : voit tous les clients, toutes regions
+        - Conseiller : voit uniquement les clients de sa region
 
     Args:
-        user: dict du user depuis session.
-        all_clients: liste complète des clients.
+        clients: liste complete des clients (dicts avec cle "region")
+        user: user courant depuis la session
 
     Returns:
-        Liste filtrée.
+        Liste filtree selon les droits de l'user.
     """
-    if user["role"] == "direction":
-        return all_clients  # La direction voit tout
+    if user.role == "direction":
+        return clients
 
-    # ⚠️ BUG VOLONTAIRE — devrait être `== user["region"]`
-    return [c for c in all_clients if c["region"] != user["region"]]
+    return [c for c in clients if c["region"] == user.region]

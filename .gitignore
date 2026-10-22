@@ -52,3 +52,6 @@ htmlcov/
 # === Secrets ===
 *.pem
 *.key
+
+# Playbook privé d'injection des incidents (NE JAMAIS COMMITER)
+docs/INCIDENT_INJECTION_PLAYBOOK.md

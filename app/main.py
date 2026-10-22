@@ -16,12 +16,24 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import SESSION_SECRET, SESSION_COOKIE_NAME, SESSION_MAX_AGE
+from app.core.clients import load_clients
+from app.core.scoring import precompute_all_scores
+from app.ml.churn_model import load_model
+from app.ml.shap_explainer import load_explainer
+from app.ml.reco_model import load_reco_rules
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup / shutdown — chargement des modèles, démarrage scheduler."""
-    # TODO : charger les modèles ML (churn, reco, SHAP explainer)
+    # Charger les clients en mémoire depuis le CSV
+    load_clients()
+    # Charger les modeles ML + SHAP explainer
+    load_model()
+    load_explainer()
+    load_reco_rules()
+    # Pre-scorer tous les clients (lecture rapide depuis dict en memoire)
+    precompute_all_scores()
     # TODO : démarrer APScheduler (alertes, drift check, cost tracking)
     # TODO : init DB si absente
     yield
@@ -49,10 +61,10 @@ app.add_middleware(
 
 
 # === Routers ===
-# TODO : from app.core.routes import router as core_router
-# TODO : app.include_router(core_router)
-# TODO : from app.auth.routes import router as auth_router
-# TODO : app.include_router(auth_router)
+from app.core.routes import router as core_router
+app.include_router(core_router)
+from app.auth.routes import router as auth_router
+app.include_router(auth_router)
 
 
 # === Fichiers statiques (fronts conseiller + direction) ===

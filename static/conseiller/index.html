@@ -6,41 +6,47 @@
   <title>Tempo Client — Espace Conseiller</title>
   <link rel="stylesheet" href="/static/shared/style.css">
 </head>
-<body>
-  <header class="topbar">
-    <h1>Tempo Client</h1>
-    <div class="topbar-user">
-      <span id="user-name">—</span>
-      <button id="logout-btn">Déconnexion</button>
-    </div>
-  </header>
+<body class="conseiller-v2">
 
-  <main class="content">
-    <h2>Mes clients à risque</h2>
-    <table class="clients-table">
-      <thead>
-        <tr>
-          <th>Nom</th>
-          <th>Région</th>
-          <th>Ancienneté</th>
-          <th>Produits</th>
-          <th>Solde moyen</th>
-          <th>Score churn</th>
-          <th>Urgence</th>
-        </tr>
-      </thead>
-      <tbody id="clients-tbody">
-        <tr><td colspan="7" style="text-align:center;color:#8a8a8a">Chargement…</td></tr>
-      </tbody>
-    </table>
+  <div class="app-v2">
 
-    <section id="client-detail" class="client-detail" hidden>
-      <h3 id="client-detail-name">—</h3>
-      <ul class="feature-list" id="feature-list"></ul>
-      <div class="explanation-box" id="explanation-box">—</div>
-      <div class="reco-list" id="reco-list"></div>
-    </section>
-  </main>
+    <!-- Top bar -->
+    <header class="app-topbar-v2">
+      <div class="brand">Tempo Client</div>
+      <div class="user-chip">
+        <div class="avatar" id="user-avatar">—</div>
+        <span id="user-name">—</span>
+        <button class="btn-logout" id="logout-btn">Deconnexion</button>
+      </div>
+    </header>
+
+    <!-- Sidebar clients -->
+    <aside class="sidebar-v2">
+      <div class="sidebar-header">
+        <h2>Clients a risque</h2>
+        <input class="sidebar-search" id="search-input" type="text" placeholder="Rechercher par nom...">
+        <div class="sidebar-pills" id="urgence-pills">
+          <div class="pill active" data-urgence="all">Tous</div>
+          <div class="pill" data-urgence="high">High</div>
+          <div class="pill" data-urgence="medium">Med</div>
+          <div class="pill" data-urgence="low">Low</div>
+        </div>
+      </div>
+      <div class="sidebar-list" id="sidebar-list">
+        <div style="padding:20px;text-align:center;color:#8a8a8a;font-size:12px">Chargement...</div>
+      </div>
+      <div class="sidebar-footer" id="sidebar-footer">—</div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-v2" id="main-content">
+      <div class="empty-state">
+        <div class="icon">◇</div>
+        <div>Selectionnez un client dans la liste a gauche</div>
+      </div>
+    </main>
+
+  </div>
 
   <script src="/static/conseiller/app.js"></script>
 </body>
