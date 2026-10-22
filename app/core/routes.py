@@ -8,10 +8,12 @@ Les 5 endpoints principaux de l'API :
     GET  /dashboard/direction    — KPI agreges (reserve direction)
 """
 
+from pathlib import Path
 import asyncio
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import HTMLResponse
 
 from app.auth.models import User
 from app.auth.rbac import filter_clients_by_user, require_direction
@@ -22,6 +24,7 @@ from app.ml.reco_model import recommend_actions
 from app.core.schemas import (
     ClientWithUrgence,
     DashboardKPI,
+    DriftStats,
     ExplainResponse,
     MLOpsStats,
     PortfolioStats,
@@ -33,6 +36,7 @@ from app.core.scoring import get_all_scores, get_score
 from app.monitoring.llm_cost import read_cost_log, get_first_of_month, get_24h_ago
 from app.llm.base import LLMProviderError
 from app.monitoring.audit_log import log_audit_event
+from app.monitoring.drift import run_drift_report, get_last_drift_report
 
 
 logger = logging.getLogger(__name__)
@@ -418,8 +422,70 @@ async def get_direction_dashboard(user: User = Depends(require_direction)):
             urgence=s.urgence,
         ))
 
+    # 4. Drift stats depuis le cache memoire (calcul au boot ou sur demande)
+    last_drift = get_last_drift_report()
+    if last_drift is None:
+        drift = DriftStats(
+            drift_detected=False,
+            nb_features_drifted=0,
+            nb_features_total=0,
+            drifted_features=[],
+            share_drifted=0.0,
+            computed_at=None,
+            report_available=False,
+        )
+    else:
+        report_available = Path(last_drift.get("report_latest_path", "")).exists()
+        drift = DriftStats(
+            drift_detected=last_drift["drift_detected"],
+            nb_features_drifted=last_drift["nb_features_drifted"],
+            nb_features_total=last_drift["nb_features_total"],
+            drifted_features=last_drift["drifted_features"],
+            share_drifted=last_drift["share_drifted"],
+            computed_at=last_drift["computed_at"],
+            report_available=report_available,
+        )
+
     return DashboardKPI(
         portfolio=portfolio,
         ml_ops=ml_ops,
+        drift=drift,
         top_clients_risque=top_clients,
     )
+
+
+# === BRIQUE 8 : Monitoring Evidently ===
+
+@router.post("/monitoring/drift/recompute")
+async def recompute_drift(user: User = Depends(require_direction)):
+    """Force le recalcul du rapport de derive.
+
+    Pattern archi : l'endpoint declenche l'adapter Evidently (drift.py),
+    met a jour le cache memoire _LAST_REPORT, et renvoie la synthese.
+    Le dashboard la recuperera au prochain GET /dashboard/direction.
+    """
+    try:
+        synthesis = run_drift_report()
+        return {
+            "status": "ok",
+            "drift_detected": synthesis["drift_detected"],
+            "nb_features_drifted": synthesis["nb_features_drifted"],
+            "computed_at": synthesis["computed_at"],
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur recalcul derive : {e}")
+
+
+@router.get("/monitoring/drift/report", response_class=HTMLResponse)
+async def serve_drift_report(user: User = Depends(require_direction)):
+    """Sert le rapport HTML Evidently \"latest\" directement dans le navigateur."""
+    last = get_last_drift_report()
+    if last is None:
+        raise HTTPException(status_code=404, detail="Aucun rapport disponible")
+
+    report_path = Path(last.get("report_latest_path", ""))
+    if not report_path.exists():
+        raise HTTPException(status_code=404, detail="Fichier rapport introuvable")
+
+    html = report_path.read_text(encoding="utf-8")
+    return HTMLResponse(content=html, status_code=200)

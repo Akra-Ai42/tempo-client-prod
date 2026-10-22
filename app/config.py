@@ -36,6 +36,8 @@ SHAP_EXPLAINER_PATH = os.getenv("SHAP_EXPLAINER_PATH", "./models/shap_explainer.
 
 # === Monitoring ===
 EVIDENTLY_REPORTS_DIR = os.getenv("EVIDENTLY_REPORTS_DIR", "./data/evidently_reports")
+CLIENTS_BASELINE_CSV = os.getenv("CLIENTS_BASELINE_CSV", "./data/clients_baseline.csv")
+CLIENTS_CURRENT_CSV = os.getenv("CLIENTS_CURRENT_CSV", "./data/clients_current.csv")
 LLM_COST_LOG_PATH = os.getenv("LLM_COST_LOG_PATH", "./data/llm_cost_log.jsonl")
 DRIFT_CHECK_INTERVAL_HOURS = int(os.getenv("DRIFT_CHECK_INTERVAL_HOURS", "24"))
 

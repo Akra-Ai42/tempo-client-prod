@@ -24,6 +24,43 @@ const initials = (fullName) => {
 const formatUsd = (n) => `${n.toFixed(6)} USD`;
 const formatPct = (n) => `${n.toFixed(1)}%`;
 
+function renderDriftSection(drift) {
+  const statusLabel = drift.drift_detected ? 'DETECTEE' : 'OK';
+  const statusColor = drift.drift_detected ? 'var(--danger)' : 'var(--success)';
+  const sharePct = (drift.share_drifted * 100).toFixed(0);
+
+  const featuresList = drift.drifted_features && drift.drifted_features.length
+    ? drift.drifted_features.map(f => `<span class="drift-feature">${f}</span>`).join('')
+    : '<span class="drift-feature-none">Aucune feature derivee</span>';
+
+  const reportLink = drift.report_available
+    ? `<a href="/monitoring/drift/report" target="_blank" class="btn-refresh" style="text-decoration:none;display:inline-block">Voir le rapport Evidently</a>`
+    : '';
+
+  const recomputeBtn = `<button class="btn-refresh" id="btn-recompute-drift">Verifier maintenant</button>`;
+
+  return `
+    <div class="section-direction">
+      <div class="section-head">
+        <div class="section-title-big">Derive des donnees (Evidently)</div>
+        <div style="display:flex;gap:8px">${reportLink}${recomputeBtn}</div>
+      </div>
+      <div class="portfolio-row" style="grid-template-columns:200px 1fr">
+        <div class="donut-container" style="justify-content:center">
+          <div style="font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Statut</div>
+          <div style="font-size:28px;font-weight:600;color:${statusColor};line-height:1">${statusLabel}</div>
+          <div style="font-size:11px;color:var(--text-tertiary);margin-top:8px">${drift.nb_features_drifted}/${drift.nb_features_total} features derivees (${sharePct}%)</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px">Features derivees</div>
+          <div class="drift-features">${featuresList}</div>
+          ${drift.computed_at ? `<div style="font-size:11px;color:var(--text-tertiary);margin-top:16px">Dernier calcul : ${new Date(drift.computed_at).toLocaleString('fr-FR')}</div>` : ''}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderDonut(pctHigh, pctMedium, pctLow, totalClients) {
   const radius = 48;
   const strokeWidth = 14;
@@ -190,6 +227,7 @@ async function loadDashboard() {
       </div>
       ${renderPortfolioSection(kpi.portfolio)}
       ${renderMLOpsSection(kpi.ml_ops)}
+      ${renderDriftSection(kpi.drift)}
       ${renderTopList(kpi.top_clients_risque)}
     `;
 

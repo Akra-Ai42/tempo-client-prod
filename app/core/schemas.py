@@ -102,16 +102,29 @@ class MLOpsStats(BaseModel):
     last_call_at: Optional[str] = None
 
 
+class DriftStats(BaseModel):
+    """Statistiques de derive des donnees via Evidently."""
+    drift_detected: bool
+    nb_features_drifted: int
+    nb_features_total: int
+    drifted_features: list[str]
+    share_drifted: float
+    computed_at: Optional[str] = None
+    report_available: bool = False
+
+
 class DashboardKPI(BaseModel):
     """Reponse complete du dashboard direction.
 
-    Agrege 3 vues :
+    Agrege 4 vues :
         - portfolio : KPI business pour le Comex
         - ml_ops    : KPI techniques pour la DSI
+        - drift     : derive des donnees (brique 8 Evidently)
         - top_clients_risque : top 10 clients a risque toutes regions
     """
     portfolio: PortfolioStats
     ml_ops: MLOpsStats
+    drift: DriftStats
     top_clients_risque: list[TopClientEntry]
 
 

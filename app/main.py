@@ -21,6 +21,7 @@ from app.core.scoring import precompute_all_scores
 from app.ml.churn_model import load_model
 from app.ml.shap_explainer import load_explainer
 from app.ml.reco_model import load_reco_rules
+from app.monitoring.drift import run_drift_report
 
 
 @asynccontextmanager
@@ -34,6 +35,12 @@ async def lifespan(app: FastAPI):
     load_reco_rules()
     # Pre-scorer tous les clients (lecture rapide depuis dict en memoire)
     precompute_all_scores()
+    # Brique 8 : calcul initial du rapport de derive Evidently
+    try:
+        run_drift_report()
+    except Exception as e:
+        print(f"[WARN] run_drift_report au boot a echoue : {e}")
+        # On ne bloque pas le boot si Evidently echoue
     # TODO : démarrer APScheduler (alertes, drift check, cost tracking)
     # TODO : init DB si absente
     yield
