@@ -160,3 +160,36 @@ class ClientWithUrgence(ClientSummary):
     """
     score_churn: float = Field(..., ge=0.0, le=1.0)
     urgence: str = Field(..., description="low | medium | high")
+
+
+class TrendPoint(BaseModel):
+    """Un snapshot KPI horaire pour la section Tendances du dashboard."""
+    ts: str
+    total_clients: int
+    nb_high: int
+    nb_medium: int
+    nb_low: int
+    score_moyen: float
+    taux_churn_predit: float
+    cost_llm_mois: float
+    cost_llm_24h: float
+    nb_appels_24h: int
+    hit_rate_pct: float
+    avg_latency_ms: int
+
+
+class DashboardTrends(BaseModel):
+    """Reponse de GET /dashboard/direction/trends : serie temporelle KPI."""
+    hours: int
+    nb_points: int
+    points: list[TrendPoint]
+
+
+class DriftHistoryEntry(BaseModel):
+    """Une entree de l historique drift pour /dashboard/direction/drift/history."""
+    ts: str
+    drift_detected: bool
+    nb_features_drifted: int
+    share_drifted: float
+    drifted_features: list[str]
+    report_path: str

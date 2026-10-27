@@ -24,6 +24,8 @@ from app.ml.reco_model import recommend_actions
 from app.core.schemas import (
     ClientWithUrgence,
     DashboardKPI,
+    DashboardTrends,
+    DriftHistoryEntry,
     DriftStats,
     ExplainResponse,
     MLOpsStats,
@@ -31,12 +33,14 @@ from app.core.schemas import (
     RecommendResponse,
     ScoreResponse,
     TopClientEntry,
+    TrendPoint,
 )
 from app.core.scoring import get_all_scores, get_score
 from app.monitoring.llm_cost import read_cost_log, get_first_of_month, get_24h_ago
 from app.llm.base import LLMProviderError
 from app.monitoring.audit_log import log_audit_event
 from app.monitoring.drift import run_drift_report, get_last_drift_report
+from app.scheduler.db import query_trends, query_drift_history
 
 
 logger = logging.getLogger(__name__)
@@ -489,3 +493,42 @@ async def serve_drift_report(user: User = Depends(require_direction)):
 
     html = report_path.read_text(encoding="utf-8")
     return HTMLResponse(content=html, status_code=200)
+
+
+# === BRIQUE 9 : Scheduler + SQLite historisation ===
+
+@router.get("/dashboard/direction/trends", response_model=DashboardTrends)
+async def get_direction_trends(
+    hours: int = 24,
+    user: User = Depends(require_direction),
+):
+    """Serie temporelle KPI dashboard direction (derniere N heures).
+
+    Lit les snapshots horaires stockes par snapshot_kpi_job dans SQLite.
+    Zero recalcul, lecture pure, latence ~1 ms meme sur 90 jours.
+
+    Args:
+        hours: fenetre temporelle en heures (defaut 24, max 2160 soit 90j)
+    """
+    hours = max(1, min(hours, 2160))
+    rows = query_trends(hours=hours)
+    points = [TrendPoint(**row) for row in rows]
+    return DashboardTrends(
+        hours=hours,
+        nb_points=len(points),
+        points=points,
+    )
+
+
+@router.get("/dashboard/direction/drift/history", response_model=list[DriftHistoryEntry])
+async def get_drift_history(
+    limit: int = 30,
+    user: User = Depends(require_direction),
+):
+    """Historique des rapports de derive quotidiens (derniers N jours).
+
+    Lit la table drift_history remplie par daily_drift_job.
+    """
+    limit = max(1, min(limit, 365))
+    rows = query_drift_history(limit=limit)
+    return [DriftHistoryEntry(**row) for row in rows]

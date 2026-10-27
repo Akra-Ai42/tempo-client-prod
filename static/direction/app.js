@@ -206,6 +206,96 @@ function renderTopList(topClients) {
   `;
 }
 
+// === BRIQUE 9 : Section Tendances 24h ===
+
+// Mini-graphe SVG line chart compact
+// values : array de numbers
+// width/height : dimensions SVG
+// color : couleur de la ligne (CSS variable ou hex)
+function renderMiniLineChart(values, width, height, color) {
+  if (!values || values.length < 2) {
+    return `<div style="font-size:11px;color:var(--text-tertiary);padding:8px">Pas assez de donnees (${values ? values.length : 0} points)</div>`;
+  }
+
+  const padding = 4;
+  const w = width - padding * 2;
+  const h = height - padding * 2;
+
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+
+  const points = values.map((v, i) => {
+    const x = padding + (i / (values.length - 1)) * w;
+    const y = padding + h - ((v - min) / range) * h;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+
+  // Area path pour un fond translucide sous la courbe
+  const areaPoints = `${padding},${padding + h} ${points} ${padding + w},${padding + h}`;
+
+  return `
+    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="display:block">
+      <polygon points="${areaPoints}" fill="${color}" opacity="0.1"></polygon>
+      <polyline points="${points}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"></polyline>
+    </svg>
+  `;
+}
+
+function renderTrendsSection(trends) {
+  if (!trends || !trends.points || trends.points.length < 2) {
+    return `
+      <div class="section-direction">
+        <div class="section-head">
+          <div class="section-title-big">Tendances 24h</div>
+        </div>
+        <div class="portfolio-row" style="grid-template-columns:1fr">
+          <div class="loading-state">Pas assez de donnees temporelles (${trends ? trends.nb_points : 0} snapshots). Le scheduler collecte 1 point par heure.</div>
+        </div>
+      </div>
+    `;
+  }
+
+  const points = trends.points;
+  const costSeries = points.map(p => p.cost_llm_mois);
+  const hitSeries = points.map(p => p.hit_rate_pct);
+  const highSeries = points.map(p => p.nb_high);
+
+  const lastCost = costSeries[costSeries.length - 1];
+  const firstCost = costSeries[0];
+  const costDelta = lastCost - firstCost;
+  const costArrow = costDelta > 0 ? '^' : (costDelta < 0 ? 'v' : '=');
+  const costColor = costDelta > 0 ? 'var(--danger)' : (costDelta < 0 ? 'var(--success)' : 'var(--text-tertiary)');
+
+  const lastHit = hitSeries[hitSeries.length - 1];
+  const lastHigh = highSeries[highSeries.length - 1];
+
+  return `
+    <div class="section-direction">
+      <div class="section-head">
+        <div class="section-title-big">Tendances ${trends.hours}h (${trends.nb_points} snapshots)</div>
+      </div>
+      <div class="trends-grid">
+        <div class="trend-card">
+          <div class="trend-label">Cout LLM mois courant</div>
+          <div class="trend-value">${lastCost.toFixed(6)} USD <span style="color:${costColor};font-size:12px">${costArrow}</span></div>
+          <div class="trend-chart">${renderMiniLineChart(costSeries, 280, 60, 'var(--danger)')}</div>
+        </div>
+        <div class="trend-card">
+          <div class="trend-label">Hit rate cache</div>
+          <div class="trend-value">${lastHit.toFixed(1)}%</div>
+          <div class="trend-chart">${renderMiniLineChart(hitSeries, 280, 60, 'var(--highlight)')}</div>
+        </div>
+        <div class="trend-card">
+          <div class="trend-label">Clients haute urgence</div>
+          <div class="trend-value">${lastHigh}</div>
+          <div class="trend-chart">${renderMiniLineChart(highSeries, 280, 60, 'var(--accent)')}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 async function loadMe() {
   const me = await api('/auth/me');
   document.getElementById('user-name').textContent = me.full_name;
@@ -217,7 +307,10 @@ async function loadDashboard() {
   main.innerHTML = '<div class="loading-state">Chargement du dashboard...</div>';
 
   try {
-    const kpi = await api('/dashboard/direction');
+    const [kpi, trends] = await Promise.all([
+      api('/dashboard/direction'),
+      api('/dashboard/direction/trends?hours=24').catch(() => ({ hours: 24, nb_points: 0, points: [] })),
+    ]);
     main.innerHTML = `
       <div class="section-direction">
         <div class="section-head">
@@ -228,6 +321,7 @@ async function loadDashboard() {
       ${renderPortfolioSection(kpi.portfolio)}
       ${renderMLOpsSection(kpi.ml_ops)}
       ${renderDriftSection(kpi.drift)}
+      ${renderTrendsSection(trends)}
       ${renderTopList(kpi.top_clients_risque)}
     `;
 

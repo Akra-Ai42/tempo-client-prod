@@ -35,6 +35,7 @@ SHAP_EXPLAINER_PATH = os.getenv("SHAP_EXPLAINER_PATH", "./models/shap_explainer.
 
 
 # === Monitoring ===
+DATA_DIR = os.getenv("DATA_DIR", "./data")
 EVIDENTLY_REPORTS_DIR = os.getenv("EVIDENTLY_REPORTS_DIR", "./data/evidently_reports")
 CLIENTS_BASELINE_CSV = os.getenv("CLIENTS_BASELINE_CSV", "./data/clients_baseline.csv")
 CLIENTS_CURRENT_CSV = os.getenv("CLIENTS_CURRENT_CSV", "./data/clients_current.csv")

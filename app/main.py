@@ -22,6 +22,7 @@ from app.ml.churn_model import load_model
 from app.ml.shap_explainer import load_explainer
 from app.ml.reco_model import load_reco_rules
 from app.monitoring.drift import run_drift_report
+from app.scheduler.jobs import start_scheduler, stop_scheduler
 
 
 @asynccontextmanager
@@ -41,9 +42,23 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"[WARN] run_drift_report au boot a echoue : {e}")
         # On ne bloque pas le boot si Evidently echoue
+
+    # Brique 9 : demarrer APScheduler (snapshots horaires + drift quotidien + purge)
+    try:
+        start_scheduler()
+        print("[OK] APScheduler demarre : snapshots horaires + drift quotidien")
+    except Exception as e:
+        print(f"[WARN] start_scheduler a echoue : {e}")
+        # On ne bloque pas le boot si le scheduler echoue
     # TODO : démarrer APScheduler (alertes, drift check, cost tracking)
     # TODO : init DB si absente
     yield
+    # Brique 9 : arreter APScheduler proprement au shutdown
+    try:
+        stop_scheduler()
+        print("[OK] APScheduler arrete")
+    except Exception as e:
+        print(f"[WARN] stop_scheduler a echoue : {e}")
     # TODO : flush logs, arrêter scheduler proprement
 
 
