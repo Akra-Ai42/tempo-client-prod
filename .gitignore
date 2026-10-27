@@ -34,6 +34,7 @@ data/*.sqlite
 data/*.sqlite3
 data/evidently_reports/
 data/llm_cost_log.jsonl
+data/audit_log.jsonl
 
 # === Modèles entraînés (générés localement) ===
 models/*.pkl
