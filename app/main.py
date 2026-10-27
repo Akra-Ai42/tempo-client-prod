@@ -12,6 +12,7 @@ Lancement en prod (Render) :
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -68,6 +69,13 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+
+@app.get("/")
+async def root():
+    """Redirige la racine vers la page de login."""
+    return RedirectResponse(url="/static/shared/login.html")
+
 
 
 # === Middlewares ===
