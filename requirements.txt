@@ -7,6 +7,7 @@ python-multipart==0.0.12
 # === Auth (session cookie) ===
 itsdangerous==2.2.0
 starlette==0.38.6
+bcrypt==5.0.0
 
 # === HTTP client (appels LLM) ===
 httpx==0.27.2
