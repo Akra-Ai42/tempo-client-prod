@@ -198,31 +198,39 @@ function renderKPICards(client) {
 
 async function loadAndRenderSHAP(clientId, container) {
   container.innerHTML = `<div class="section-v2">
-    <div class="section-title">Top facteurs explicatifs</div>
-    <div class="shap-list"><div style="padding:16px;text-align:center;color:#8a8a8a;font-size:12px">Chargement...</div></div>
+    <div class="section-title">Ce qui pousse ce client vers la sortie</div>
+    <div class="facteurs-metier-list"><div style="padding:16px;text-align:center;color:#8a8a8a;font-size:12px">Analyse en cours...</div></div>
   </div>`;
 
   try {
-    const score = await api(`/score/${clientId}`, { method: 'POST' });
-    const rows = score.top_features.map(f => {
-      const up = f.direction === '+';
-      const arrow = up ? '↑' : '↓';
+    const expl = await api(`/explain-metier/${clientId}`, { method: 'POST' });
+
+    if (!expl.facteurs || expl.facteurs.length === 0) {
+      container.innerHTML = `<div class="section-v2">
+        <div class="section-title">Ce qui pousse ce client vers la sortie</div>
+        <div class="facteurs-metier-list"><div style="padding:16px;text-align:center;color:#8a8a8a;font-size:12px;font-style:italic">Aucun facteur significatif identifie.</div></div>
+      </div>`;
+      return;
+    }
+
+    const items = expl.facteurs.map(f => {
+      const senskls = f.sens === 'positif' ? 'facteur-negatif' : 'facteur-positif';
       return `
-        <div class="shap-row">
-          <div class="shap-label">${formatFeatureName(f.feature)}</div>
-          <div class="shap-value">${f.value}</div>
-          <div class="shap-contrib ${up ? 'up' : 'down'}">${arrow} ${Math.abs(f.shap_value).toFixed(2)}</div>
+        <div class="facteur-metier ${senskls}">
+          <div class="facteur-phrase">${f.phrase}</div>
+          <div class="facteur-justification">${f.justification}</div>
         </div>
       `;
     }).join('');
+
     container.innerHTML = `<div class="section-v2">
-      <div class="section-title">Top facteurs explicatifs</div>
-      <div class="shap-list">${rows}</div>
+      <div class="section-title">Ce qui pousse ce client vers la sortie</div>
+      <div class="facteurs-metier-list">${items}</div>
     </div>`;
   } catch (e) {
     container.innerHTML = `<div class="section-v2">
-      <div class="section-title">Top facteurs explicatifs</div>
-      <div class="shap-list"><div style="padding:16px;color:#9c3b3b;font-size:12px">Erreur : ${e.message}</div></div>
+      <div class="section-title">Ce qui pousse ce client vers la sortie</div>
+      <div class="facteurs-metier-list"><div style="padding:16px;color:#9c3b3b;font-size:12px">Erreur : ${e.message}</div></div>
     </div>`;
   }
 }

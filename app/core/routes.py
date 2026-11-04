@@ -27,7 +27,9 @@ from app.core.schemas import (
     DashboardTrends,
     DriftHistoryEntry,
     DriftStats,
+    ExplainMetierResponse,
     ExplainResponse,
+    FacteurMetier,
     MLOpsStats,
     PortfolioStats,
     RecommendResponse,
@@ -35,6 +37,7 @@ from app.core.schemas import (
     TopClientEntry,
     TrendPoint,
 )
+from app.ml.shap_metier import translate_features
 from app.core.scoring import get_all_scores, get_score
 from app.monitoring.llm_cost import read_cost_log, get_first_of_month, get_24h_ago
 from app.llm.base import LLMProviderError
@@ -106,6 +109,62 @@ async def get_client_score(
         client_id=client_id,
         score_churn=score_data.score_churn,
         top_features=score_data.top_features,
+    )
+
+
+def _urgence_from_score(score_churn: float) -> str:
+    """Convertit un score churn 0-1 en palier d urgence low / medium / high.
+
+    Memes seuils que ceux utilises ailleurs dans l app (pre-scoring boot).
+    """
+    if score_churn >= 0.7:
+        return "high"
+    if score_churn >= 0.4:
+        return "medium"
+    return "low"
+
+
+@router.post("/explain-metier/{client_id}", response_model=ExplainMetierResponse)
+async def get_explanation_metier(
+    client_id: int,
+    user: User = Depends(get_current_user),
+):
+    """Retourne le score + les facteurs SHAP traduits en langage conseiller.
+
+    Pas d appel LLM : traduction deterministe via app.ml.shap_metier.
+    L explication naturalisee par LLM reste disponible via /explain.
+    """
+    client = get_client_by_id(client_id)
+    if client is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Client {client_id} introuvable",
+        )
+
+    if user.role == "conseiller" and client["region"] != user.region:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acces refuse : ce client n est pas dans votre perimetre",
+        )
+
+    score_data = get_score(client_id)
+    if score_data is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Score non precalcule pour ce client (bug serveur)",
+        )
+
+    facteurs_dicts = translate_features(
+        top_features=score_data.top_features,
+        client=client,
+    )
+    facteurs = [FacteurMetier(**f) for f in facteurs_dicts]
+
+    return ExplainMetierResponse(
+        client_id=client_id,
+        churn_risk_pct=int(round(score_data.score_churn * 100)),
+        urgence=_urgence_from_score(score_data.score_churn),
+        facteurs=facteurs,
     )
 
 

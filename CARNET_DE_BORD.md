@@ -8,7 +8,7 @@
 > Projet : Tempo Client V2, pack pédagogique Devoteam MSc1
 > Démarrage : octobre 2026
 > Objectif : démo Sloan Charrier dans 4 semaines, talk 1er décembre 2026
-> État : 11/13 briques livrées, monitoring Evidently opérationnel, dérive détectée visible dans le dashboard
+> État : 12/13 briques livrées, scheduler + SQLite opérationnels, tendances 24h visibles dans le dashboard, produit prêt pour la mise en prod
 
 ---
 
@@ -32,6 +32,7 @@
 - Étape D2. Je consulte le dashboard business + ML Ops (Brique 7)
 - Étape D3. Je bascule vers la vue conseiller (Brique 7 + 5)
 - Étape D4. Je consulte la dérive et ouvre le rapport Evidently (Brique 8)
+- Étape D5. Je lis les tendances 24h et le comportement temporel (Brique 9)
 
 ### Infrastructure sous-jacente
 - Infra A. Au boot du serveur (Brique 3 ML + Brique 10a pré-scoring)
@@ -39,6 +40,7 @@
 - Infra C. Chaque requête RBAC (Brique 5)
 - Infra D. Vue agrégée direction, pattern lecture pure (Brique 7)
 - Infra E. Monitoring Evidently, adapter branché à chaud (Brique 8)
+- Infra F. Scheduler APScheduler + SQLite historisation (Brique 9)
 
 ### Briques construites (ordre numérique)
 - Brique 1. LLMProvider + OpenRouter (livrée)
@@ -52,7 +54,7 @@
 - Brique 10c. Endpoint /recommend + règles métier + audit (livrée)
 - Brique 7. Dashboard direction V2 UX premium (livrée)
 - Brique 8. Monitoring Evidently + détection de dérive (livrée) (à venir)
-- Brique 9. Scheduler APScheduler (à venir)
+- Brique 9. Scheduler APScheduler + SQLite historisation (livrée) (à venir)
 - Brique 11. Injection des incidents (semaine 4)
 
 ### Références
@@ -548,6 +550,41 @@ Claire a maintenant une vue complète : le monitoring technique montre que les d
 - **Rapport HTML historisé** : chaque run crée un fichier daté + met à jour latest.html
 - **Protection direction only** : les 2 endpoints exigent `require_direction`
 - **Pattern narratif** : le monitoring voit la dérive, mais si personne ne regarde le dashboard, l'incident se prépare en silence
+
+---
+
+## Étape D5. Je lis les tendances 24h et le comportement temporel
+
+### Scénario : Claire ouvre son dashboard le lendemain matin
+
+### Flux pas à pas
+
+1. Au chargement, `app.js` fait 2 appels en parallèle via `Promise.all` :
+   → `GET /dashboard/direction` : KPI à l'instant T
+   → `GET /dashboard/direction/trends?hours=24` : série temporelle 24h
+2. Côté serveur, `/trends` lit SQLite via `query_trends(hours=24)`
+   → `SELECT * FROM snapshots_kpi WHERE ts >= ? ORDER BY ts ASC`
+   → ~24 lignes retournées (1 par heure)
+3. Le JSON de réponse contient `hours`, `nb_points`, `points`
+4. Chaque `point` contient les 11 KPI du moment : total_clients, nb_high, cost_llm, hit_rate, etc.
+5. Côté front, `renderTrendsSection(trends)` construit 3 cards :
+   → **Coût LLM mois courant** avec sa valeur actuelle + flèche delta (^ v =) + mini-graphe SVG
+   → **Hit rate cache** avec sa valeur actuelle + mini-graphe SVG
+   → **Clients haute urgence** avec sa valeur actuelle + mini-graphe SVG
+6. Chaque mini-graphe est un `<svg>` inline avec un `<polyline>` et un `<polygon>` fill translucide pour l'aire sous la courbe
+7. Les courbes sont scaled dynamiquement : min et max calculés sur les données du jour
+8. Si Claire voit le coût LLM remonter progressivement sur 24h, elle sait qu'il y a quelque chose à surveiller **avant** que la facture mensuelle explose
+     ↓
+Claire a maintenant une vision temporelle du comportement du système. Pas juste "voici l'état maintenant", mais "voici comment ça évolue". C'est la différence entre une capture d'écran et un film.
+
+### Détails techniques clés
+
+- **2 fetchs en parallèle** via `Promise.all` : zéro latence ajoutée pour la nouvelle section
+- **SVG inline** cohérent avec le donut et les barres des sections précédentes
+- **Scheduler automatique** : 1 snapshot par heure, aucune action manuelle requise
+- **Scale dynamique** : min/max des données du jour, pas de range fixe
+- **Fallback gracieux** : si < 2 snapshots, message "Pas assez de données"
+- **Rétention 90 jours** : 2160 snapshots maxi dans la table, SQLite tient facilement
 
 ---
 
@@ -1689,11 +1726,110 @@ Parce que les 2 CSV baseline et current sont déjà différents. **Mais le modè
 ---
 
 
-## Brique 9. Scheduler
+## Brique 9. Scheduler APScheduler + SQLite historisation
 
-Statut : à construire.
+Statut : livrée et validée en local, 27 octobre 2026.
 
-Objectif prévu : APScheduler avec 3 tâches (alertes bascule risque, check drift, check coûts LLM) + SQLite pour historisation.
+### Objectif
+
+Transformer le produit "démo statique" en produit "temporel". Avant la brique 9,
+le dashboard direction donnait un snapshot à l'instant T. Après, il donne la
+courbe des 24 dernières heures. **C'est la différence entre une capture
+d'écran et un film.** Et c'est exactement ce qui transforme un POC en
+produit utilisable par une DSI.
+
+### Fichiers créés ou modifiés
+
+```
+requirements.txt                 Ajout apscheduler
+app/config.py                    Ajout DATA_DIR
+app/scheduler/__init__.py        NOUVEAU
+app/scheduler/db.py              NOUVEAU - adapter SQLite (2 tables, 4 fonctions)
+app/scheduler/jobs.py            NOUVEAU - 3 taches + start/stop_scheduler
+app/main.py                      Lifespan enrichi : start_scheduler au boot, stop au shutdown
+app/core/schemas.py              Ajout TrendPoint, DashboardTrends, DriftHistoryEntry
+app/core/routes.py               2 nouveaux endpoints /trends et /drift/history
+static/direction/index.html      CSS .trends-grid + .trend-card + .trend-chart
+static/direction/app.js          renderMiniLineChart SVG + renderTrendsSection + Promise.all
+data/tempo.db                    NOUVEAU - fichier SQLite auto-cree au boot
+```
+
+### Flux pas à pas : voir Étape D5 du parcours direction + Infra F
+
+### Les 8 décisions prises
+
+| Décision | Choix | Raison |
+|---|---|---|
+| Base de données | SQLite | Zero config, 1 fichier, portable Render |
+| ORM ou SQL brut | SQL brut via sqlite3 | Pédagogique, zéro overhead, lisible étudiants |
+| Scheduler | APScheduler AsyncIOScheduler | Tourne dans FastAPI, zéro dépendance externe |
+| Fréquence snapshots | Toutes les heures + daily drift | Équilibré, courbe lisible, pas de pollution |
+| Rétention | 90j snapshots + illimité drift | 2160 lignes maxi, SQLite tient facilement |
+| Trends dans dashboard | Nouvelle section 4 "Tendances 24h" | Minimum viable, cohérent avec le reste |
+| Format snapshots | 1 ligne par snapshot, format large | Requêtes simples, pas de pivot côté client |
+| Code | Nouveau module app/scheduler/ | Pattern hexagonal : db.py adapter + jobs.py orchestrateur |
+
+### Schéma SQLite
+
+```sql
+CREATE TABLE snapshots_kpi (
+    ts TEXT PRIMARY KEY,
+    total_clients INTEGER,
+    nb_high INTEGER, nb_medium INTEGER, nb_low INTEGER,
+    score_moyen REAL, taux_churn_predit REAL,
+    cost_llm_mois REAL, cost_llm_24h REAL, nb_appels_24h INTEGER,
+    hit_rate_pct REAL, avg_latency_ms INTEGER
+);
+
+CREATE TABLE drift_history (
+    ts TEXT PRIMARY KEY,
+    drift_detected INTEGER,
+    nb_features_drifted INTEGER,
+    share_drifted REAL,
+    drifted_features TEXT,
+    report_path TEXT
+);
+```
+
+### Les 2 nouveaux endpoints
+
+- **GET /dashboard/direction/trends?hours=24** (direction only) : série temporelle KPI, max 2160 heures. Lecture pure, ~1 ms même sur 90 jours.
+- **GET /dashboard/direction/drift/history?limit=30** (direction only) : historique des rapports de dérive quotidiens, max 365 entrées.
+
+### Pattern archi hexagonale
+
+La brique 9 est **le quatrième exemple hexagonal du projet**, et probablement le plus pédagogique :
+
+- **Adapter technique** `app/scheduler/db.py` : contient tout le SQL. Si on migre vers PostgreSQL ou DuckDB demain, on change ce fichier et rien d'autre.
+- **Orchestrateur** `app/scheduler/jobs.py` : 3 fonctions métier. Appelle le centre et délègue le stockage.
+- **Centre métier** `app/core/routes.py` : consomme `query_trends()` comme boîte noire. Ne connaît pas SQLite.
+- **Adapter présentation** `static/direction/app.js` : `renderTrendsSection()` affiche. Ne connaît pas d'où viennent les données.
+
+**La brique 9 ajoute de la persistance au produit sans toucher le centre métier.** C'est l'ajout de capacité le plus propre du projet.
+
+### Tips
+
+> Tip. AsyncIOScheduler plutôt que BackgroundScheduler. FastAPI tourne en asyncio, un BackgroundScheduler créerait un thread parallèle avec risques de blocage.
+
+> Tip. `init_db()` idempotent avec `CREATE TABLE IF NOT EXISTS`. Peut être appelé à chaque boot sans risque.
+
+> Tip. `INSERT OR REPLACE INTO` pour éviter les doublons sur `ts` PRIMARY KEY.
+
+> Tip. `Promise.all` côté front pour les 2 fetchs. Dashboard + trends en parallèle, zéro latence ajoutée.
+
+> Tip. SVG inline polyline + polygon fill. Rendu léger, zéro dépendance D3 ou Chart.js.
+
+> Piège. F-string avec backslash dans un heredoc Python. Voir piège n°15 du journal.
+
+> Piège. Dépendances implicites dans un test manuel. Voir piège n°16 du journal.
+
+### Métriques
+
+- Latence `GET /dashboard/direction/trends?hours=24` : **~1 ms** sur 24 snapshots
+- Latence `insert_snapshot_kpi` : **< 1 ms**
+- Taille `data/tempo.db` après 1 jour (24 snapshots) : ~15 KB
+- Projection taille à 90 jours (2160 snapshots) : ~500 KB
+- Overhead CPU scheduler : négligeable
 
 ---
 
@@ -1891,9 +2027,23 @@ Cause : le navigateur garde l'ancien JS en cache plus agressivement que prévu, 
 Solution : trois niveaux. D'abord Ctrl+Shift+R classique. Ensuite F12 ouvert + onglet Network + case "Disable cache" cochée. En dernier recours : fenêtre privée (Ctrl+Shift+N) qui garantit zéro cache possible.
 Leçon : la fenêtre privée est le test imparable. Si ça marche en privée et pas en normal, c'est 100 pourcent du cache.
 
+### Piège numéro 15. F-string avec backslash dans un heredoc Python
+
+Symptôme : `SyntaxError: f-string expression part cannot include a backslash` au premier import du module.
+Cause : pour éviter que le heredoc Bash interprète les apostrophes dans le code Python, on écrit `\'`. Mais ce backslash reste dans le code final à l'intérieur d'une f-string comme `f"... {dict[\'key\']} ..."`, et Python interdit cette syntaxe.
+Solution : préférer `.format()` ou l'opérateur `%` dans les f-strings qui contiennent des accès par clé sur un dict. Alternative : variable temporaire avant la f-string (`v = d["key"]; f"... {v} ..."`).
+Leçon : les heredocs multi-niveaux (Bash → Python → f-string → dict access) multiplient les règles d'échappement. Simplifier le niveau le plus profond.
+
+### Piège numéro 16. Dépendances implicites dans un test manuel
+
+Symptôme : `RuntimeError: SHAP explainer non charge. Appeler load_explainer() au startup.` quand on lance une fonction isolée en test manuel.
+Cause : la fonction appelée dépend d'autres composants initialisés plus tôt dans le lifespan. Au boot normal, FastAPI exécute `load_clients → load_model → load_explainer → load_reco_rules → precompute_all_scores → run_drift_report → start_scheduler()` dans l'ordre. En test manuel on peut oublier un maillon.
+Solution : documenter l'ordre d'initialisation dans le README du module, ou créer une fonction `init_app_for_test()` qui fait tout le pipeline en 1 appel.
+Leçon : les tests manuels isolés sont utiles mais fragiles. Pour les smoke tests, préférer un wrapper qui reproduit le boot complet.
+
 ---
 
-Dernière mise à jour : 22 octobre 2026, après la brique 8 (monitoring Evidently + détection de dérive).
-Prochaine mise à jour : à la livraison de la brique 9 (scheduler APScheduler + SQLite historisation).
+Dernière mise à jour : 27 octobre 2026, après la brique 9 (scheduler APScheduler + SQLite historisation).
+Prochaine mise à jour : à la mise en prod Render ou à la livraison de la brique 11 (injection incidents semaine 4).
 
 ---

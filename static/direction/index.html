@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tempo Client — Direction</title>
+  <title>Tempo Client - Direction</title>
   <link rel="stylesheet" href="/static/shared/style.css">
   <style>
     body.direction-v2 {
@@ -61,6 +61,155 @@
     }
     .btn-switch:hover { background: #223a52; }
 
+    /* ========== Section 1 : Ce qui se passe aujourd hui ========== */
+
+    .narrative-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+    .narrative-card {
+      background: var(--surface-1);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .narrative-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+    }
+    .narrative-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    .narrative-delta {
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .narrative-value {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+    .narrative-text {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      line-height: 1.5;
+      padding-top: 6px;
+      border-top: 1px dashed var(--border-subtle);
+    }
+
+    .minibars {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 54px;
+      padding: 2px 0;
+    }
+    .minibar {
+      flex: 1;
+      background: var(--border-regular);
+      border-radius: 1px;
+      transition: height 0.3s;
+    }
+    .minibar.muted { background: var(--border-regular); }
+    .minibar.accent { background: var(--accent); }
+    .minibar.danger { background: var(--danger); }
+    .minibars-empty {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      padding: 8px 0;
+    }
+
+    /* ========== Section 2 : Signaux techniques ========== */
+
+    .signaux-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+    .signal-small-card {
+      background: var(--surface-1);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+    }
+    .signal-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+    .signal-value {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+    .signal-unit {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      font-weight: 400;
+      margin-left: 3px;
+    }
+
+    .signal-wide-card {
+      background: var(--surface-1);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px 18px;
+    }
+    .signal-wide-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .signal-wide-meta {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      font-variant-numeric: tabular-nums;
+    }
+    .signal-wide-footer {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border-subtle);
+    }
+    .drift-features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .drift-feature {
+      background: var(--danger);
+      color: white;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 500;
+      font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    .drift-feature-none {
+      color: var(--success);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /* ========== Section 3 : Synthese chiffree ========== */
+
     .kpi-grid-direction {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -96,61 +245,7 @@
       margin-top: 4px;
     }
 
-    .portfolio-row {
-      display: grid;
-      grid-template-columns: 240px 1fr;
-      gap: 24px;
-      background: var(--surface-1);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      padding: 20px;
-    }
-    .donut-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .donut-legend {
-      margin-top: 12px;
-      font-size: 11px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .donut-legend .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--text-secondary);
-    }
-    .donut-legend .legend-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-    }
-
-    .portfolio-stats {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
-      align-content: center;
-    }
-    .portfolio-stat {
-      padding: 12px 0;
-    }
-    .portfolio-stat .label {
-      font-size: 10px;
-      color: var(--text-tertiary);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    .portfolio-stat .value {
-      font-size: 20px;
-      font-weight: 600;
-      color: var(--text-primary);
-      font-variant-numeric: tabular-nums;
-      margin-top: 2px;
-    }
+    /* ========== Top liste clients (preserve de la version precedente) ========== */
 
     .top-list {
       background: var(--surface-1);
@@ -213,69 +308,16 @@
       color: var(--text-tertiary);
       font-size: 13px;
     }
-    .drift-features {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-    .drift-feature {
-      background: var(--danger);
-      color: white;
-      padding: 4px 10px;
-      border-radius: var(--radius-sm);
-      font-size: 12px;
-      font-weight: 500;
-      font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-    }
-    .drift-feature-none {
-      color: var(--success);
-      font-size: 13px;
-      font-weight: 500;
-    }
-    .trends-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-    }
-    .trend-card {
-      background: var(--surface-1);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      padding: 14px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .trend-card .trend-label {
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--text-tertiary);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-    .trend-card .trend-value {
-      font-size: 18px;
-      font-weight: 600;
-      color: var(--text-primary);
-      font-variant-numeric: tabular-nums;
-      line-height: 1.1;
-    }
-    .trend-card .trend-chart {
-      margin-top: 4px;
-      border-top: 1px dashed var(--border-subtle);
-      padding-top: 8px;
-    }
   </style>
 </head>
 <body class="direction-v2">
 
-  <!-- Top bar (meme pattern que la vue conseiller V2) -->
   <header class="app-topbar-v2">
-    <div class="brand">Tempo Client - Direction</div>
+    <div class="brand">Tempo Client . Direction</div>
     <div class="user-chip">
       <a href="/static/conseiller/index.html" class="btn-switch">Vue conseiller</a>
-      <div class="avatar" id="user-avatar">-</div>
-      <span id="user-name">-</span>
+      <div class="avatar" id="user-avatar">.</div>
+      <span id="user-name">.</span>
       <button class="btn-logout" id="logout-btn">Deconnexion</button>
     </div>
   </header>

@@ -974,3 +974,47 @@ body.conseiller-v2 {
 .main-v2::-webkit-scrollbar-thumb:hover {
   background: var(--border-regular);
 }
+
+/* === Facteurs SHAP metier (vue conseiller, remplace la table shap-row) === */
+
+.facteurs-metier-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.facteur-metier {
+  background: var(--card, #ffffff);
+  border: 1px solid var(--border-subtle, #eceae5);
+  border-left: 3px solid transparent;
+  border-radius: 4px;
+  padding: 10px 14px;
+  transition: background 0.1s;
+}
+
+.facteur-metier.facteur-negatif {
+  border-left-color: var(--danger, #9c3b3b);
+}
+
+.facteur-metier.facteur-positif {
+  border-left-color: var(--success, #4a6a4a);
+}
+
+.facteur-metier .facteur-phrase {
+  font-size: 13px;
+  color: var(--text-primary, #1a1a1a);
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+.facteur-metier .facteur-phrase strong {
+  font-weight: 600;
+}
+
+.facteur-metier .facteur-justification {
+  font-size: 11px;
+  color: var(--text-tertiary, #8a8a8a);
+  margin-top: 4px;
+  line-height: 1.5;
+}

@@ -368,7 +368,7 @@
     </div>
     <div class="meta-item">
       <div class="label">État</div>
-      <div class="value">11/13 briques livrées</div>
+      <div class="value">12/13 briques livrées</div>
     </div>
   </div>
 </header>
@@ -399,6 +399,7 @@
     <li><a href="#userD2">Étape D2. Je consulte le dashboard business + ML Ops</a></li>
     <li><a href="#userD3">Étape D3. Je bascule vers la vue conseiller</a></li>
     <li><a href="#userD4">Étape D4. Je consulte la dérive et ouvre le rapport Evidently</a></li>
+    <li><a href="#userD5">Étape D5. Je lis les tendances 24h et le comportement temporel</a></li>
   </ul>
 
   <h3>Infrastructure sous-jacente</h3>
@@ -408,6 +409,7 @@
     <li><a href="#infraC">Infra C. Chaque requête RBAC</a></li>
     <li><a href="#infraD">Infra D. Vue agrégée direction, pattern lecture pure</a></li>
     <li><a href="#infraE">Infra E. Monitoring Evidently, adapter branché à chaud</a></li>
+    <li><a href="#infraF">Infra F. Scheduler APScheduler + SQLite historisation</a></li>
   </ul>
 
   <h3>Briques construites</h3>
@@ -797,6 +799,41 @@
   </div>
 </section>
 
+<section class="doc-section" id="userD5">
+  <h2>Étape D5. Je lis les tendances 24h et le comportement temporel</h2>
+
+  <div class="flow-box">
+    <div class="scenario">Scénario : Claire ouvre son dashboard le lendemain matin</div>
+    <ol>
+      <li>Au chargement, 2 appels en parallèle via <code>Promise.all</code> :
+        <span class="substep">→ GET /dashboard/direction : KPI à l'instant T</span>
+        <span class="substep">→ GET /dashboard/direction/trends?hours=24 : série temporelle 24h</span>
+      </li>
+      <li>Côté serveur, /trends lit SQLite via <code>query_trends(hours=24)</code>
+        <span class="substep">→ SELECT * FROM snapshots_kpi WHERE ts >= ? ORDER BY ts ASC</span>
+        <span class="substep">→ ~24 lignes retournées (1 par heure)</span>
+      </li>
+      <li>Le JSON contient hours, nb_points, points</li>
+      <li>Chaque point a 11 KPI : total_clients, nb_high, cost_llm, hit_rate, etc.</li>
+      <li>Côté front, <code>renderTrendsSection(trends)</code> construit 3 cards :
+        <span class="substep">→ Coût LLM mois courant + flèche delta + mini-graphe SVG</span>
+        <span class="substep">→ Hit rate cache + mini-graphe SVG</span>
+        <span class="substep">→ Clients haute urgence + mini-graphe SVG</span>
+      </li>
+      <li>Chaque mini-graphe est un &lt;svg&gt; inline avec polyline + polygon fill translucide</li>
+      <li>Scale dynamique : min/max calculés sur les données du jour</li>
+      <li>Si Claire voit le coût LLM remonter progressivement sur 24h, elle sait qu'il y a quelque chose à surveiller <strong>avant</strong> que la facture mensuelle explose</li>
+    </ol>
+    <div class="arrow-down">↓</div>
+    <div class="outcome">Claire a maintenant une vision temporelle du système. Pas juste "voici l'état maintenant", mais "voici comment ça évolue". <strong>La différence entre une capture d'écran et un film.</strong></div>
+  </div>
+
+  <div class="tip">
+    <div class="label">Tip. 2 fetchs en parallèle via Promise.all</div>
+    <p>Dashboard + trends chargés simultanément, zéro latence ajoutée. Le <code>.catch(() => defaultValue)</code> protège contre une panne du nouvel endpoint sans casser l'affichage principal.</p>
+  </div>
+</section>
+
 <!-- ============== INFRASTRUCTURE ============== -->
 
 <section class="doc-section" id="infraA">
@@ -965,6 +1002,43 @@
   <div class="tip">
     <div class="label">Tip. Point d'injection incident 2 préservé</div>
     <p><code>scripts/init_db.py</code> charge actuellement baseline. Changement vers current déclenchera la dérive dans le modèle réel (semaine 4 du cours Devoteam).</p>
+  </div>
+</section>
+
+<section class="doc-section" id="infraF">
+  <h2>Infra F. Scheduler APScheduler + SQLite historisation</h2>
+
+  <div class="flow-box">
+    <div class="scenario">Scénario : le serveur tourne, le temps passe, l'historique se construit</div>
+    <ol>
+      <li>Au boot du lifespan, après run_drift_report() :
+        <span class="substep">→ start_scheduler() est appelé</span>
+        <span class="substep">→ init_db() crée les 2 tables si absentes</span>
+        <span class="substep">→ APScheduler démarré en AsyncIOScheduler dans le même process que FastAPI</span>
+      </li>
+      <li>3 jobs enregistrés :
+        <span class="substep">→ snapshot_kpi_job : IntervalTrigger(hours=1)</span>
+        <span class="substep">→ daily_drift_job : CronTrigger(hour=2) UTC</span>
+        <span class="substep">→ purge_old_data_job : CronTrigger(hour=3) UTC</span>
+      </li>
+      <li>Snapshot initial au boot pour avoir au moins 1 ligne</li>
+      <li>Chaque heure, snapshot_kpi_job compose 11 KPI business + ML Ops et INSERT dans snapshots_kpi</li>
+      <li>Chaque jour 2h UTC, daily_drift_job appelle run_drift_report() et INSERT dans drift_history</li>
+      <li>Chaque jour 3h UTC, purge_old_data_job : DELETE WHERE ts < (now - 90 days)</li>
+      <li>Au shutdown, stop_scheduler() arrête APScheduler proprement</li>
+    </ol>
+    <div class="arrow-down">↓</div>
+    <div class="outcome">Le serveur accumule un historique sans intervention humaine. <strong>L'infrastructure se maintient toute seule.</strong></div>
+  </div>
+
+  <div class="tip">
+    <div class="label">Tip. Zéro dépendance externe</div>
+    <p>APScheduler tourne dans le process FastAPI, pas de Redis, pas de Celery, pas de cron système. Portable Render.</p>
+  </div>
+
+  <div class="tip">
+    <div class="label">Tip. Adapter technique hexagonal pur</div>
+    <p><code>app/scheduler/db.py</code> contient tout le SQL. Si on migre vers PostgreSQL ou DuckDB, on change <strong>ce fichier et rien d'autre</strong>.</p>
   </div>
 </section>
 
@@ -1489,6 +1563,69 @@ data/evidently_reports/     Dossier auto-créé : latest.html + rapports histori
   </ul>
 </section>
 
+<section class="doc-section" id="b9">
+  <h2>Brique 9. Scheduler APScheduler + SQLite historisation <span class="brique-status done">Livrée 27/10/2026</span></h2>
+
+  <h3>Objectif</h3>
+  <p>Transformer le produit "démo statique" en produit "temporel". Avant la brique 9, le dashboard donnait un snapshot à l'instant T. Après, il donne la courbe des 24 dernières heures. <strong>C'est la différence entre une capture d'écran et un film.</strong></p>
+
+  <h3>Fichiers créés ou modifiés</h3>
+  <pre><code>requirements.txt                 Ajout apscheduler
+app/config.py                    Ajout DATA_DIR
+app/scheduler/__init__.py        NOUVEAU
+app/scheduler/db.py              NOUVEAU - adapter SQLite
+app/scheduler/jobs.py            NOUVEAU - 3 taches + start/stop_scheduler
+app/main.py                      Lifespan enrichi
+app/core/schemas.py              TrendPoint + DashboardTrends + DriftHistoryEntry
+app/core/routes.py               2 nouveaux endpoints
+static/direction/index.html      CSS .trends-grid
+static/direction/app.js          renderMiniLineChart SVG + Promise.all
+data/tempo.db                    NOUVEAU - fichier SQLite auto-cree au boot</code></pre>
+
+  <h3>Les 8 décisions prises</h3>
+  <table>
+    <thead><tr><th>Décision</th><th>Choix</th><th>Raison</th></tr></thead>
+    <tbody>
+      <tr><td>Base de données</td><td>SQLite</td><td>Zero config, 1 fichier, portable Render</td></tr>
+      <tr><td>ORM ou SQL brut</td><td>SQL brut via sqlite3</td><td>Pédagogique, zéro overhead</td></tr>
+      <tr><td>Scheduler</td><td>APScheduler AsyncIOScheduler</td><td>Tourne dans FastAPI, zéro dépendance</td></tr>
+      <tr><td>Fréquence</td><td>Horaire + daily drift</td><td>Équilibré, courbe lisible</td></tr>
+      <tr><td>Rétention</td><td>90j snapshots + illimité drift</td><td>2160 lignes maxi</td></tr>
+      <tr><td>Trends dans dashboard</td><td>Nouvelle section 4</td><td>Minimum viable, cohérent</td></tr>
+      <tr><td>Format</td><td>1 ligne large par snapshot</td><td>Requêtes simples</td></tr>
+      <tr><td>Code</td><td>Nouveau module app/scheduler/</td><td>Pattern hexagonal : db + jobs</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Pattern archi hexagonale</h3>
+  <p>La brique 9 est <strong>le quatrième exemple hexagonal du projet</strong>, et probablement le plus pédagogique :</p>
+  <ul>
+    <li><strong>Adapter technique</strong> <code>app/scheduler/db.py</code> : contient tout le SQL. Si on migre vers PostgreSQL ou DuckDB demain, on change ce fichier et rien d'autre.</li>
+    <li><strong>Orchestrateur</strong> <code>app/scheduler/jobs.py</code> : 3 fonctions métier. Appelle le centre et délègue le stockage.</li>
+    <li><strong>Centre métier</strong> <code>app/core/routes.py</code> : consomme query_trends() comme boîte noire.</li>
+    <li><strong>Adapter présentation</strong> <code>static/direction/app.js</code> : renderTrendsSection() affiche sans connaître d'où viennent les données.</li>
+  </ul>
+
+  <div class="tip">
+    <div class="label">Tip. AsyncIOScheduler plutôt que BackgroundScheduler</div>
+    <p>FastAPI tourne en asyncio. BackgroundScheduler créerait un thread parallèle avec risques de blocage. AsyncIOScheduler s'intègre dans la même boucle événementielle.</p>
+  </div>
+
+  <div class="tip">
+    <div class="label">Tip. SVG inline polyline + polygon fill</div>
+    <p>Le polyline fait la ligne, le polygon fait l'aire translucide dessous (opacity:0.1). Rendu léger, zéro dépendance D3 ou Chart.js.</p>
+  </div>
+
+  <h3>Métriques</h3>
+  <ul>
+    <li>Latence <code>GET /dashboard/direction/trends?hours=24</code> : <strong>~1 ms</strong> sur 24 snapshots</li>
+    <li>Latence <code>insert_snapshot_kpi</code> : <strong>&lt; 1 ms</strong></li>
+    <li>Taille data/tempo.db après 1 jour : ~15 KB</li>
+    <li>Projection à 90 jours : ~500 KB</li>
+    <li>Overhead CPU scheduler : négligeable</li>
+  </ul>
+</section>
+
 <!-- ============== RÉFÉRENCES ============== -->
 
 <section class="doc-section" id="metriques">
@@ -1619,10 +1756,20 @@ data/evidently_reports/     Dossier auto-créé : latest.html + rapports histori
     <div class="label">Piège n°14. Cache navigateur persistant malgré Ctrl+Shift+R</div>
     <p>La console affiche une erreur qui pointe sur une ligne de code qui n'existe plus dans le fichier à jour sur disque. <strong>Cause</strong> : le navigateur garde l'ancien JS en cache plus agressivement que prévu. <strong>Solution 3 niveaux</strong> : (1) Ctrl+Shift+R, (2) F12 + Network + "Disable cache" cochée, (3) <strong>fenêtre privée Ctrl+Shift+N</strong> qui garantit zéro cache possible. La fenêtre privée est le test imparable.</p>
   </div>
+
+  <div class="piege">
+    <div class="label">Piège n°15. F-string avec backslash dans un heredoc Python</div>
+    <p><code>SyntaxError: f-string expression part cannot include a backslash</code> au premier import. <strong>Cause</strong> : pour éviter que le heredoc Bash interprète les apostrophes, on écrit <code>\'</code>, mais ce backslash reste dans le code final à l'intérieur d'une f-string. <strong>Solution</strong> : préférer <code>.format()</code> ou variable temporaire avant la f-string. <strong>Leçon</strong> : les heredocs multi-niveaux (Bash → Python → f-string → dict access) multiplient les règles d'échappement.</p>
+  </div>
+
+  <div class="piege">
+    <div class="label">Piège n°16. Dépendances implicites dans un test manuel</div>
+    <p><code>RuntimeError: SHAP explainer non charge</code> en test isolé. <strong>Cause</strong> : la fonction appelée dépend d'autres composants initialisés plus tôt dans le lifespan. <strong>Solution</strong> : documenter l'ordre d'initialisation, ou créer une fonction wrapper qui reproduit le boot complet. <strong>Leçon</strong> : les tests manuels isolés sont fragiles.</p>
+  </div>
 </section>
 
 <footer>
-  Dernière mise à jour : 22 octobre 2026, après la brique 8 (monitoring Evidently + détection de dérive). Prochaine mise à jour à la livraison de la brique 9 (scheduler APScheduler + SQLite historisation).
+  Dernière mise à jour : 27 octobre 2026, après la brique 9 (scheduler APScheduler + SQLite historisation). Prochaine mise à jour à la mise en prod Render ou à la livraison de la brique 11 (injection incidents semaine 4).
 </footer>
 
 </div>

@@ -193,3 +193,22 @@ class DriftHistoryEntry(BaseModel):
     share_drifted: float
     drifted_features: list[str]
     report_path: str
+
+
+# === Explain metier (SHAP traduit en langage conseiller) ===
+
+class FacteurMetier(BaseModel):
+    """Un facteur SHAP traduit en phrase comprehensible par un conseiller."""
+    sens: str = Field(..., description="positif (augmente le risque) ou negatif (reduit le risque)")
+    phrase: str = Field(..., description="Phrase en langage metier avec valeur du client")
+    justification: str = Field(..., description="Courte explication generique du pourquoi")
+    poids: int = Field(..., ge=0, description="Nombre de points de risque, ordre de grandeur")
+    feature: str = Field(..., description="Nom technique de la feature, pour debug uniquement")
+
+
+class ExplainMetierResponse(BaseModel):
+    """Reponse de /explain-metier : score + facteurs traduits."""
+    client_id: int
+    churn_risk_pct: int = Field(..., ge=0, le=100, description="Risque de churn en pourcentage entier")
+    urgence: str = Field(..., description="low | medium | high")
+    facteurs: list[FacteurMetier]
