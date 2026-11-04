@@ -1,5 +1,4 @@
-// === Tempo Client V2 - Espace Conseiller ===
-// UX premium : sidebar + hero + KPI + chat + checklist
+// === Tempo Client . Espace Conseiller (dark marine + IBM Plex + encarts) ===
 
 const api = async (path, opts = {}) => {
   const res = await fetch(path, { credentials: 'same-origin', ...opts });
@@ -16,7 +15,6 @@ const api = async (path, opts = {}) => {
   return res.json();
 };
 
-// === Etat global ===
 const state = {
   user: null,
   clients: [],
@@ -27,35 +25,26 @@ const state = {
   doneRecos: JSON.parse(localStorage.getItem('tempo_done_recos') || '{}'),
 };
 
-// === Utilitaires ===
-
 const initials = (fullName) => {
   if (!fullName) return '?';
   const parts = fullName.trim().split(/\s+/);
   return (parts[0][0] + (parts[1]?.[0] || '')).toUpperCase();
 };
 
-const formatFeatureName = (name) => ({
-  nb_interactions_90j: 'Interactions sur 90j',
-  derniere_interaction_jours: 'Derniere interaction (jours)',
-  solde_moyen: 'Solde moyen',
-  produits_detenus: 'Produits detenus',
-  anciennete_mois: 'Anciennete (mois)',
-  age_client: 'Age du client',
-  canal_prefere: 'Canal prefere',
-}[name] || name);
-
 const formatCurrency = (n) => new Intl.NumberFormat('fr-FR', {
   style: 'currency', currency: 'EUR', maximumFractionDigits: 0,
 }).format(n);
 
-// === Chargement initial ===
+const nowHHMM = () => {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+};
 
 async function loadMe() {
   const me = await api('/auth/me');
   state.user = me;
   const region = me.region ? me.region : 'toutes regions';
-  document.getElementById('user-name').textContent = `${me.full_name} - ${region}`;
+  document.getElementById('user-name').textContent = `${me.full_name} . ${region}`;
   document.getElementById('user-avatar').textContent = initials(me.full_name);
 }
 
@@ -65,22 +54,13 @@ async function loadClients() {
   applyFiltersAndRender();
 }
 
-// === Sidebar : filtres + rendu ===
-
 function applyFiltersAndRender() {
   let list = state.clients;
-
-  if (state.currentUrgence !== 'all') {
-    list = list.filter(c => c.urgence === state.currentUrgence);
-  }
-
+  if (state.currentUrgence !== 'all') list = list.filter(c => c.urgence === state.currentUrgence);
   if (state.currentSearch) {
     const q = state.currentSearch.toLowerCase();
-    list = list.filter(c =>
-      `${c.prenom} ${c.nom}`.toLowerCase().includes(q)
-    );
+    list = list.filter(c => `${c.prenom} ${c.nom}`.toLowerCase().includes(q));
   }
-
   state.filteredClients = list;
   renderSidebar();
 }
@@ -90,7 +70,7 @@ function renderSidebar() {
   const footer = document.getElementById('sidebar-footer');
 
   if (!state.filteredClients.length) {
-    container.innerHTML = '<div style="padding:20px;text-align:center;color:#8a8a8a;font-size:12px">Aucun client ne correspond</div>';
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:#7a869c;font-size:12px">Aucun client ne correspond</div>';
     footer.textContent = `0 / ${state.clients.length} clients`;
     return;
   }
@@ -104,52 +84,37 @@ function renderSidebar() {
       <div class="urgence-dot ${c.urgence}"></div>
       <div class="client-info">
         <div class="client-name">${c.prenom} ${c.nom}</div>
-        <div class="client-meta">${c.region} · ${c.anciennete_mois} mois</div>
+        <div class="client-meta">${c.region} . ${c.anciennete_mois} mois</div>
       </div>
       <div class="client-score">${scorePct}%</div>
     `;
     item.addEventListener('click', () => openClient(c));
     container.appendChild(item);
   }
-
   footer.textContent = `${state.filteredClients.length} / ${state.clients.length} clients`;
 }
 
-// === Fiche client ===
+// === Score header remplace l ancien gauge + hero ===
 
-function renderGauge(scorePct, urgence) {
-  const radius = 32;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference * (1 - scorePct / 100);
-  return `
-    <div class="gauge ${urgence}">
-      <svg width="72" height="72" viewBox="0 0 72 72">
-        <circle class="gauge-bg" cx="36" cy="36" r="${radius}"></circle>
-        <circle class="gauge-fill" cx="36" cy="36" r="${radius}"
-                stroke-dasharray="${circumference}"
-                stroke-dashoffset="${offset}"></circle>
-      </svg>
-      <div class="gauge-text">
-        <div class="gauge-value">${scorePct}%</div>
-        <div class="gauge-label">${urgence}</div>
-      </div>
-    </div>
-  `;
-}
-
-function renderHero(client) {
+function renderHeader(client) {
   const scorePct = Math.round(client.score_churn * 100);
+  const urg = client.urgence;
   return `
     <div class="hero-v2">
       <div class="hero-info">
         <div class="hero-name">${client.prenom} ${client.nom}</div>
         <div class="hero-meta">
-          ${client.age_client} ans · ${client.region} ·
-          ${Math.round(client.anciennete_mois / 12)} ans de relation ·
-          Client #${client.id}
+          Client #${client.id} . ${client.age_client} ans . ${client.region} . ${Math.round(client.anciennete_mois / 12)} ans de relation
         </div>
       </div>
-      ${renderGauge(scorePct, client.urgence)}
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <div style="font-size:10px;color:var(--text-tertiary);letter-spacing:0.08em;text-transform:uppercase;font-weight:600">Score de risque churn</div>
+        <div class="score-block">
+          <div class="score-value ${urg}">${scorePct}%</div>
+          <div class="score-tag ${urg}">${urg === 'high' ? 'HAUTE URGENCE' : (urg === 'medium' ? 'URGENCE MOY.' : 'URGENCE FAIBLE')}</div>
+        </div>
+        <div class="mono" style="font-size:10px;color:var(--text-tertiary);margin-top:2px">XGBoost v1.2 . Calcule ${nowHHMM()}</div>
+      </div>
     </div>
   `;
 }
@@ -158,98 +123,99 @@ function renderKPICards(client) {
   return `
     <div class="kpi-row">
       <div class="kpi-card-v2">
-        <div class="kpi-head">
-          <svg class="kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
-          <div class="kpi-head-label">Profil</div>
-        </div>
+        <div class="kpi-head"><div class="kpi-head-label">Profil</div></div>
         <div class="kpi-value">${client.age_client}</div>
-        <div class="kpi-sub-v2">ans · anciennete ${client.anciennete_mois} mois</div>
+        <div class="kpi-sub-v2">ans . anciennete ${client.anciennete_mois} mois</div>
       </div>
-
       <div class="kpi-card-v2">
-        <div class="kpi-head">
-          <svg class="kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12c0-5 4-9 9-9s9 4 9 9c0 2-1 4-2 5l2 4-4-2c-1 1-3 2-5 2-5 0-9-4-9-9z"/></svg>
-          <div class="kpi-head-label">Activite</div>
-        </div>
+        <div class="kpi-head"><div class="kpi-head-label">Activite</div></div>
         <div class="kpi-value">${client.nb_interactions_90j}</div>
-        <div class="kpi-sub-v2">interactions · derniere il y a ${client.derniere_interaction_jours}j</div>
+        <div class="kpi-sub-v2">interactions . derniere il y a ${client.derniere_interaction_jours}j</div>
       </div>
-
       <div class="kpi-card-v2">
-        <div class="kpi-head">
-          <svg class="kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/></svg>
-          <div class="kpi-head-label">Finance</div>
-        </div>
+        <div class="kpi-head"><div class="kpi-head-label">Finance</div></div>
         <div class="kpi-value">${formatCurrency(client.solde_moyen)}</div>
-        <div class="kpi-sub-v2">solde moyen · ${client.produits_detenus} produit${client.produits_detenus > 1 ? 's' : ''}</div>
+        <div class="kpi-sub-v2">solde moyen . ${client.produits_detenus} produit${client.produits_detenus > 1 ? 's' : ''}</div>
       </div>
-
       <div class="kpi-card-v2">
-        <div class="kpi-head">
-          <svg class="kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l10 20H2L12 2z"/><path d="M12 10v5" stroke-linecap="round"/><circle cx="12" cy="18" r="1" fill="currentColor"/></svg>
-          <div class="kpi-head-label">Risque</div>
-        </div>
-        <div class="kpi-value">${Math.round(client.score_churn * 100)}<span style="font-size:16px;color:var(--text-tertiary)">%</span></div>
+        <div class="kpi-head"><div class="kpi-head-label">Risque</div></div>
+        <div class="kpi-value">${Math.round(client.score_churn * 100)}<span style="font-size:12px;color:var(--text-tertiary)">%</span></div>
         <div class="kpi-sub-v2 urgence-${client.urgence}" style="font-weight:600">${client.urgence.toUpperCase()}</div>
       </div>
     </div>
   `;
 }
 
+// === Les 3 zones avec encart droite ===
+
+const ZONE_NOTES = {
+  shap: {
+    num: 1,
+    title: "Derive silencieuse des recommandations",
+    ex: "ex : la meme recommandation qui revient pour tous les clients, sans rapport avec leur profil reel.",
+  },
+  explain: {
+    num: 2,
+    title: "Facture LLM qui s'emballe",
+    ex: "ex : cout qui triple sans raison, hit rate cache qui chute de 80% a 20% en une heure.",
+  },
+  recos: {
+    num: 3,
+    title: "Cascade de valeurs manquantes",
+    ex: "ex : une feature NULL qui propage l'erreur jusqu'a l'affichage conseiller.",
+  },
+};
+
+function renderZoneNote(key) {
+  const z = ZONE_NOTES[key];
+  return `
+    <aside class="zone-note">
+      <div class="zone-note-head">Zone pedagogique ${z.num}</div>
+      <div class="zone-note-title">${z.title}</div>
+      <div class="zone-note-ex">${z.ex}</div>
+    </aside>
+  `;
+}
+
 async function loadAndRenderSHAP(clientId, container) {
-  container.innerHTML = `<div class="section-v2">
-    <div class="section-title">Ce qui pousse ce client vers la sortie</div>
-    <div class="facteurs-metier-list"><div style="padding:16px;text-align:center;color:#8a8a8a;font-size:12px">Analyse en cours...</div></div>
-  </div>`;
+  container.innerHTML = `
+    <div class="section-v2">
+      <div class="section-title">Ce qui pousse ce client vers la sortie</div>
+      <div class="facteurs-metier-list"><div style="padding:16px;text-align:center;color:var(--text-tertiary);font-size:12px">Analyse en cours...</div></div>
+    </div>
+  `;
 
   try {
     const expl = await api(`/explain-metier/${clientId}`, { method: 'POST' });
-
     if (!expl.facteurs || expl.facteurs.length === 0) {
-      container.innerHTML = `<div class="section-v2">
-        <div class="section-title">Ce qui pousse ce client vers la sortie</div>
-        <div class="facteurs-metier-list"><div style="padding:16px;text-align:center;color:#8a8a8a;font-size:12px;font-style:italic">Aucun facteur significatif identifie.</div></div>
-      </div>`;
+      container.querySelector('.facteurs-metier-list').innerHTML = `<div style="padding:16px;text-align:center;color:var(--text-tertiary);font-size:12px;font-style:italic">Aucun facteur significatif identifie.</div>`;
       return;
     }
-
     const items = expl.facteurs.map(f => {
       const senskls = f.sens === 'positif' ? 'facteur-negatif' : 'facteur-positif';
       return `
         <div class="facteur-metier ${senskls}">
-          <div class="facteur-phrase">${f.phrase}</div>
-          <div class="facteur-justification">${f.justification}</div>
+          <div>
+            <div class="facteur-phrase">${f.phrase}</div>
+            <div class="facteur-justification">${f.justification}</div>
+          </div>
+          <div class="facteur-poids">${f.poids}%</div>
         </div>
       `;
     }).join('');
-
-    container.innerHTML = `<div class="section-v2">
-      <div class="section-title">Ce qui pousse ce client vers la sortie</div>
-      <div class="facteurs-metier-list">${items}</div>
-    </div>`;
+    container.querySelector('.facteurs-metier-list').innerHTML = items;
   } catch (e) {
-    container.innerHTML = `<div class="section-v2">
-      <div class="section-title">Ce qui pousse ce client vers la sortie</div>
-      <div class="facteurs-metier-list"><div style="padding:16px;color:#9c3b3b;font-size:12px">Erreur : ${e.message}</div></div>
-    </div>`;
+    container.querySelector('.facteurs-metier-list').innerHTML = `<div style="padding:16px;color:var(--danger);font-size:12px">Erreur : ${e.message}</div>`;
   }
 }
 
 async function loadAndRenderExplain(clientId, container) {
   container.innerHTML = `
     <div class="section-v2">
-      <div class="section-title">Analyse contextuelle</div>
+      <div class="section-title">Analyse contextuelle . Tempo Analyst</div>
       <div class="chat-v2">
-        <div class="chat-header">
-          <div class="dot"></div>
-          <div class="title">Tempo Analyst</div>
-        </div>
         <div class="chat-body">
           <div class="bubble loading">Analyse en cours...</div>
-        </div>
-        <div class="chat-input">
-          <input type="text" placeholder="Posez une question au modele..." disabled>
-          <span class="send-hint">bientot</span>
         </div>
       </div>
     </div>
@@ -266,13 +232,14 @@ async function loadAndRenderExplain(clientId, container) {
       <div class="bubble">${expl.explication}</div>
       <div class="bubble-meta">
         <span class="${cacheClass}">${cacheLabel}</span>
+        <span style="color:var(--border-regular)">|</span>
         <span>${latency}</span>
+        <span style="color:var(--border-regular)">|</span>
         <span>${cost}</span>
       </div>
     `;
   } catch (e) {
-    const body = container.querySelector('.chat-body');
-    body.innerHTML = `<div class="bubble" style="color:#9c3b3b">Erreur : ${e.message}</div>`;
+    container.querySelector('.chat-body').innerHTML = `<div class="bubble" style="color:var(--danger)">Erreur : ${e.message}</div>`;
   }
 }
 
@@ -280,7 +247,7 @@ async function loadAndRenderRecos(clientId, container) {
   container.innerHTML = `
     <div class="section-v2">
       <div class="section-title">Actions recommandees</div>
-      <div class="reco-list-v2"><div style="padding:16px;text-align:center;color:#8a8a8a;font-size:12px">Chargement...</div></div>
+      <div class="reco-list-v2"><div style="padding:16px;text-align:center;color:var(--text-tertiary);font-size:12px">Chargement...</div></div>
     </div>
   `;
 
@@ -288,7 +255,7 @@ async function loadAndRenderRecos(clientId, container) {
     const reco = await api(`/recommend/${clientId}`, { method: 'POST' });
     const listContainer = container.querySelector('.reco-list-v2');
     if (!reco.recommandations.length) {
-      listContainer.innerHTML = `<div style="padding:16px;text-align:center;color:#8a8a8a;font-size:12px;font-style:italic">Aucune action proactive requise.</div>`;
+      listContainer.innerHTML = `<div style="padding:16px;text-align:center;color:var(--text-tertiary);font-size:12px;font-style:italic">Aucune action proactive requise.</div>`;
       return;
     }
     const doneForClient = state.doneRecos[clientId] || [];
@@ -299,8 +266,8 @@ async function loadAndRenderRecos(clientId, container) {
           <div class="reco-check ${isDone ? 'checked' : ''}"></div>
           <div class="reco-content">
             <div class="reco-head-row">
-              <div class="priority-dot ${r.priorite}"></div>
               <div class="reco-action">${r.action}</div>
+              <div class="priority-dot ${r.priorite}"></div>
             </div>
             <div class="reco-just">${r.justification}</div>
           </div>
@@ -308,13 +275,11 @@ async function loadAndRenderRecos(clientId, container) {
       `;
     }).join('');
 
-    // Attacher les handlers de checkbox
     listContainer.querySelectorAll('.reco-row').forEach(row => {
       row.addEventListener('click', () => toggleReco(clientId, parseInt(row.dataset.idx), row));
     });
   } catch (e) {
-    const listContainer = container.querySelector('.reco-list-v2');
-    listContainer.innerHTML = `<div style="padding:16px;color:#9c3b3b;font-size:12px">Erreur : ${e.message}</div>`;
+    container.querySelector('.reco-list-v2').innerHTML = `<div style="padding:16px;color:var(--danger);font-size:12px">Erreur : ${e.message}</div>`;
   }
 }
 
@@ -337,24 +302,33 @@ function toggleReco(clientId, idx, row) {
 
 async function openClient(client) {
   state.currentClientId = client.id;
-  renderSidebar();  // highlight actif
+  renderSidebar();
 
   const main = document.getElementById('main-content');
   main.innerHTML = `
-    ${renderHero(client)}
+    ${renderHeader(client)}
     ${renderKPICards(client)}
-    <div id="section-shap"></div>
-    <div id="section-explain"></div>
-    <div id="section-recos"></div>
+
+    <div class="section-with-note">
+      <div id="section-shap"></div>
+      ${renderZoneNote('shap')}
+    </div>
+
+    <div class="section-with-note">
+      <div id="section-explain"></div>
+      ${renderZoneNote('explain')}
+    </div>
+
+    <div class="section-with-note">
+      <div id="section-recos"></div>
+      ${renderZoneNote('recos')}
+    </div>
   `;
 
-  // Charger les 3 sections en parallele (chacune met a jour son conteneur)
   loadAndRenderSHAP(client.id, document.getElementById('section-shap'));
   loadAndRenderExplain(client.id, document.getElementById('section-explain'));
   loadAndRenderRecos(client.id, document.getElementById('section-recos'));
 }
-
-// === Event listeners ===
 
 document.getElementById('search-input').addEventListener('input', (e) => {
   state.currentSearch = e.target.value;
@@ -373,8 +347,6 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
   try { await api('/auth/logout', { method: 'POST' }); } catch (e) {}
   window.location.href = '/static/shared/login.html';
 });
-
-// === Boot ===
 
 loadMe()
   .then(loadClients)

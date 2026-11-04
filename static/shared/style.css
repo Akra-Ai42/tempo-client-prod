@@ -1,6 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
 /* === Tempo Client — Styles communs ===
-   Palette sobre, inspirée des documents techniques et du schéma
-   d'architecture validé.
+   Palette sobre pour le login (claire).
+   Les vues Conseiller et Direction basculent en dark marine via .dark-mode.
 */
 
 :root {
@@ -975,46 +977,407 @@ body.conseiller-v2 {
   background: var(--border-regular);
 }
 
-/* === Facteurs SHAP metier (vue conseiller, remplace la table shap-row) === */
+/* ============================================================
+   DARK MARINE MODE pour les vues Conseiller et Direction
+   IBM Plex Sans + fond marine, encarts zones pedagogiques
+   Le login reste en mode clair (pas de .dark-mode sur son body)
+   ============================================================ */
 
-.facteurs-metier-list {
+.dark-mode {
+  --surface-0: #0a1628;
+  --surface-1: #0f1b2e;
+  --surface-2: #141f2f;
+  --surface-3: #1a2740;
+  --border-subtle: #1f2d42;
+  --border-regular: #2a3548;
+  --text-primary: #e8ecf0;
+  --text-secondary: #c4cdd8;
+  --text-tertiary: #7a869c;
+  --text-quaternary: #5a6578;
+  --accent: #4a90e2;
+  --accent-soft: #1f3350;
+  --accent-contrast: #8ab5e8;
+  --success: #6ba76b;
+  --warning: #d4a95c;
+  --danger: #e85c5c;
+  --card: var(--surface-2);
+  --paper: var(--surface-0);
+  --ink: var(--text-primary);
+  --ink-soft: var(--text-secondary);
+  --muted: var(--text-tertiary);
+  --line: var(--border-subtle);
+}
+
+body.dark-mode {
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--surface-0);
+  color: var(--text-primary);
+}
+
+.dark-mode .mono,
+.dark-mode .font-mono {
+  font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+/* === Topbar dark === */
+
+.dark-mode .app-topbar-v2 {
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+.dark-mode .app-topbar-v2 .brand { color: #ffffff; }
+.dark-mode .app-topbar-v2 .user-chip { color: var(--text-secondary); }
+.dark-mode .app-topbar-v2 .avatar {
+  background: var(--accent-soft);
+  color: var(--accent-contrast);
+}
+.dark-mode .btn-logout {
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: 11px;
+}
+.dark-mode .btn-logout:hover { color: var(--text-primary); }
+
+/* === Sidebar Conseiller dossier client === */
+
+.dark-mode .sidebar-v2 {
+  background: var(--surface-1);
+  border-right: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+.dark-mode .sidebar-header h2 {
+  color: var(--text-tertiary);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.dark-mode .sidebar-search {
+  background: var(--surface-0);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+.dark-mode .sidebar-search::placeholder { color: var(--text-quaternary); }
+
+.dark-mode .sidebar-pills .pill {
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+.dark-mode .sidebar-pills .pill.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}
+.dark-mode .sidebar-item { color: var(--text-primary); border-bottom: 1px solid var(--border-subtle); }
+.dark-mode .sidebar-item:hover { background: var(--surface-2); }
+.dark-mode .sidebar-item.active { background: var(--accent-soft); }
+.dark-mode .client-name { color: var(--text-primary); }
+.dark-mode .client-meta { color: var(--text-tertiary); }
+.dark-mode .client-score { color: var(--text-primary); }
+.dark-mode .sidebar-footer { color: var(--text-tertiary); }
+
+.dark-mode .urgence-dot.high { background: var(--danger); }
+.dark-mode .urgence-dot.medium { background: var(--warning); }
+.dark-mode .urgence-dot.low { background: var(--success); }
+
+/* === Main conseiller dark === */
+
+.dark-mode .main-v2 { background: var(--surface-0); color: var(--text-primary); }
+.dark-mode .empty-state { color: var(--text-tertiary); }
+
+/* === Section generale dark === */
+
+.dark-mode .section-v2 {
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  padding: 12px 14px;
+}
+.dark-mode .section-title {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* === Score header dark === */
+
+.dark-mode .hero-v2 {
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+.dark-mode .hero-info .hero-name { color: #ffffff; font-size: 16px; font-weight: 600; }
+.dark-mode .hero-info .hero-meta { color: var(--text-tertiary); font-size: 11px; margin-top: 2px; }
+
+/* === Grid 2 colonnes : section + encart zone pedagogique === */
+
+.dark-mode .section-with-note {
+  display: grid;
+  grid-template-columns: 1fr 240px;
+  gap: 12px;
+  margin-bottom: 14px;
+  align-items: start;
+}
+
+.dark-mode .zone-note {
+  background: var(--surface-1);
+  border: 1px solid var(--border-regular);
+  padding: 10px 12px;
+}
+.dark-mode .zone-note-head {
+  font-size: 9px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+.dark-mode .zone-note-title {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: 6px;
+}
+.dark-mode .zone-note-ex {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  line-height: 1.5;
+  font-style: italic;
+}
+
+/* === Facteurs SHAP metier dark === */
+
+.dark-mode .facteurs-metier-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 0;
+}
+.dark-mode .facteur-metier {
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-left: 2px solid transparent;
+  padding: 9px 12px;
+  display: grid;
+  grid-template-columns: 1fr 55px;
+  gap: 12px;
+  align-items: center;
+  border-radius: 0;
+}
+.dark-mode .facteur-metier.facteur-negatif { border-left-color: var(--danger); }
+.dark-mode .facteur-metier.facteur-positif { border-left-color: var(--success); }
+.dark-mode .facteur-phrase {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.45;
+  font-weight: 400;
+}
+.dark-mode .facteur-justification {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 3px;
+  line-height: 1.4;
+  font-style: normal;
+}
+.dark-mode .facteur-poids {
+  font-size: 14px;
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  position: static;
+  background: transparent;
+  border: none;
+  padding: 0;
+  letter-spacing: 0;
+}
+.dark-mode .facteur-metier.facteur-negatif .facteur-poids { color: var(--danger); }
+.dark-mode .facteur-metier.facteur-positif .facteur-poids { color: var(--success); }
+.dark-mode .facteur-metier.facteur-negatif .facteur-poids::before { content: '+'; }
+.dark-mode .facteur-metier.facteur-positif .facteur-poids::before { content: '-'; }
+
+/* === Hero score (remplacement du cercle) === */
+
+.dark-mode .score-block {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.dark-mode .score-block .score-value {
+  font-size: 32px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.dark-mode .score-block .score-value.high { color: var(--danger); }
+.dark-mode .score-block .score-value.medium { color: var(--warning); }
+.dark-mode .score-block .score-value.low { color: var(--success); }
+.dark-mode .score-block .score-tag {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.dark-mode .score-block .score-tag.high { color: var(--danger); }
+.dark-mode .score-block .score-tag.medium { color: var(--warning); }
+.dark-mode .score-block .score-tag.low { color: var(--success); }
+
+/* === Chat Tempo Analyst dark === */
+
+.dark-mode .chat-v2 {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+.dark-mode .chat-header { display: none; }
+.dark-mode .chat-body {
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 4px 0;
 }
-
-.facteur-metier {
-  background: var(--card, #ffffff);
-  border: 1px solid var(--border-subtle, #eceae5);
-  border-left: 3px solid transparent;
-  border-radius: 4px;
-  padding: 10px 14px;
-  transition: background 0.1s;
+.dark-mode .bubble {
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 12.5px;
+  line-height: 1.55;
+  padding: 2px 0;
+  max-width: none;
+  border: none;
 }
-
-.facteur-metier.facteur-negatif {
-  border-left-color: var(--danger, #9c3b3b);
+.dark-mode .bubble.loading { color: var(--text-tertiary); font-style: italic; }
+.dark-mode .bubble-meta {
+  display: flex;
+  gap: 10px;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+  font-variant-numeric: tabular-nums;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
 }
+.dark-mode .bubble-meta .cache-hit { color: var(--success); }
+.dark-mode .bubble-meta .cache-miss { color: var(--warning); }
+.dark-mode .chat-input { display: none; }
 
-.facteur-metier.facteur-positif {
-  border-left-color: var(--success, #4a6a4a);
+/* === Reco list dark === */
+
+.dark-mode .reco-list-v2 {
+  display: flex;
+  flex-direction: column;
 }
-
-.facteur-metier .facteur-phrase {
-  font-size: 13px;
-  color: var(--text-primary, #1a1a1a);
-  line-height: 1.5;
-  font-weight: 400;
+.dark-mode .reco-row {
+  display: flex;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
 }
+.dark-mode .reco-row:last-child { border-bottom: none; }
+.dark-mode .reco-row.done { opacity: 0.55; }
+.dark-mode .reco-check {
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--border-regular);
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+.dark-mode .reco-check.checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.dark-mode .reco-content { flex: 1; }
+.dark-mode .reco-head-row { display: flex; align-items: center; gap: 8px; }
+.dark-mode .reco-action { font-size: 13px; color: var(--text-primary); }
+.dark-mode .reco-just {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+.dark-mode .priority-dot {
+  width: 0;
+  height: 0;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.dark-mode .priority-dot.haute { color: var(--danger); }
+.dark-mode .priority-dot.haute::before { content: 'HAUTE'; }
+.dark-mode .priority-dot.moyenne { color: var(--warning); }
+.dark-mode .priority-dot.moyenne::before { content: 'MOYENNE'; }
+.dark-mode .priority-dot.basse { color: var(--success); }
+.dark-mode .priority-dot.basse::before { content: 'BASSE'; }
 
-.facteur-metier .facteur-phrase strong {
+/* === KPI row Conseiller (profil, activite, finance, risque) === */
+
+.dark-mode .kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.dark-mode .kpi-card-v2 {
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  padding: 12px;
+}
+.dark-mode .kpi-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.dark-mode .kpi-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--text-tertiary);
+}
+.dark-mode .kpi-head-label {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   font-weight: 600;
 }
+.dark-mode .kpi-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.dark-mode .kpi-sub-v2 {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+.dark-mode .kpi-sub-v2.urgence-high { color: var(--danger) !important; }
+.dark-mode .kpi-sub-v2.urgence-medium { color: var(--warning) !important; }
+.dark-mode .kpi-sub-v2.urgence-low { color: var(--success) !important; }
 
-.facteur-metier .facteur-justification {
-  font-size: 11px;
-  color: var(--text-tertiary, #8a8a8a);
-  margin-top: 4px;
-  line-height: 1.5;
+/* === Scrollbar dark === */
+
+.dark-mode .sidebar-list::-webkit-scrollbar,
+.dark-mode .main-v2::-webkit-scrollbar { width: 10px; }
+.dark-mode .sidebar-list::-webkit-scrollbar-thumb,
+.dark-mode .main-v2::-webkit-scrollbar-thumb {
+  background: var(--border-regular);
+  border-radius: 10px;
+  border: 2px solid var(--surface-1);
+}
+.dark-mode .sidebar-list::-webkit-scrollbar-thumb:hover,
+.dark-mode .main-v2::-webkit-scrollbar-thumb:hover {
+  background: var(--text-quaternary);
 }
